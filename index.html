@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#08121f" />
+  <title>DIC2 · Multiple Linear Regression Lab</title>
+  <meta name="description" content="NCHU AIoT DIC2 Multiple Linear Regression - 50 Startups & Boston Housing" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="ambient a1"></div><div class="ambient a2"></div>
+  <header class="topbar">
+    <div>
+      <div class="kicker">NCHU · AIoT & DATA ANALYTICS</div>
+      <h1>Multiple Linear Regression Lab</h1>
+    </div>
+    <div class="student"><span class="online"></span> DIC2 · 陳浩忻 · 5115056032</div>
+  </header>
+
+  <main class="shell">
+    <section class="hero panel">
+      <div>
+        <span class="eyebrow">INTERACTIVE MACHINE LEARNING</span>
+        <h2>多元線性回歸分析儀表板</h2>
+        <p>支援 50 Startups、Boston Housing 與自訂 CSV。可自行選擇 Target / Features，並即時計算 R²、RMSE、MAE、迴歸係數與殘差。</p>
+      </div>
+      <div class="formula">
+        <span>MODEL</span>
+        <strong>ŷ = β₀ + β₁x₁ + β₂x₂ + ··· + βₚxₚ</strong>
+        <small>Ordinary Least Squares · 80/20 Train-Test Split</small>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel controls">
+        <div class="section-head"><span>01</span><div><b>Problem & Dataset</b><small>選擇題目或載入自己的 CSV</small></div></div>
+
+        <label>Problem</label>
+        <select id="problemSelect">
+          <option value="startup">50 Startups — Profit Prediction</option>
+          <option value="boston">Boston Housing — MEDV Prediction</option>
+          <option value="custom">Custom Dataset</option>
+        </select>
+
+        <label>Dataset URL</label>
+        <div class="url-row">
+          <input id="datasetUrl" type="url" spellcheck="false" />
+          <button id="loadUrlBtn" class="btn secondary">Load</button>
+        </div>
+        <div class="hint">可貼上公開 CSV Raw URL；網站若限制 CORS，可改用下方本機上傳。</div>
+
+        <label class="upload-label">或上傳 CSV
+          <input id="fileInput" type="file" accept=".csv,text/csv" />
+          <span>選擇檔案</span>
+        </label>
+
+        <div id="dataStatus" class="status idle">等待載入資料</div>
+
+        <div class="divider"></div>
+        <div class="section-head"><span>02</span><div><b>Model Setup</b><small>選擇預測目標與輸入特徵</small></div></div>
+
+        <label>Target column</label>
+        <select id="targetSelect" disabled></select>
+
+        <label>Feature columns</label>
+        <div id="featureList" class="feature-list disabled"><div class="empty">載入資料後顯示欄位</div></div>
+
+        <div class="button-row">
+          <button id="selectNumericBtn" class="btn ghost" disabled>選取數值欄位</button>
+          <button id="trainBtn" class="btn primary" disabled>Train Model</button>
+        </div>
+      </aside>
+
+      <section class="results">
+        <div class="kpi-grid">
+          <div class="kpi panel"><span>R² SCORE</span><strong id="r2Value">--</strong><small>越接近 1 越佳</small></div>
+          <div class="kpi panel"><span>RMSE</span><strong id="rmseValue">--</strong><small>Root Mean Squared Error</small></div>
+          <div class="kpi panel"><span>MAE</span><strong id="maeValue">--</strong><small>Mean Absolute Error</small></div>
+          <div class="kpi panel"><span>SAMPLES</span><strong id="sampleValue">--</strong><small id="splitText">Train / Test</small></div>
+        </div>
+
+        <div class="chart-grid">
+          <article class="panel chart-card">
+            <div class="card-head"><div><span>MODEL FIT</span><h3>Actual vs Predicted</h3></div><div class="legend-dot">Test set</div></div>
+            <div class="chart-wrap"><canvas id="predictionChart"></canvas></div>
+          </article>
+          <article class="panel chart-card">
+            <div class="card-head"><div><span>ERROR ANALYSIS</span><h3>Residual Plot</h3></div><div class="legend-dot">Residual = y − ŷ</div></div>
+            <div class="chart-wrap"><canvas id="residualChart"></canvas></div>
+          </article>
+        </div>
+
+        <div class="detail-grid">
+          <article class="panel coeff-card">
+            <div class="card-head"><div><span>MODEL PARAMETERS</span><h3>Regression Coefficients</h3></div></div>
+            <div id="equationBox" class="equation-box">Train model to view equation.</div>
+            <div class="table-scroll"><table><thead><tr><th>Feature</th><th>Coefficient</th><th>|β| Rank</th></tr></thead><tbody id="coefBody"><tr><td colspan="3" class="muted">尚未訓練模型</td></tr></tbody></table></div>
+          </article>
+          <article class="panel preview-card">
+            <div class="card-head"><div><span>DATA CHECK</span><h3>Dataset Preview</h3></div><span id="shapeBadge" class="badge">-- rows</span></div>
+            <div id="previewTable" class="table-scroll"><div class="empty">尚未載入資料</div></div>
+          </article>
+        </div>
+
+        <article class="panel notes">
+          <div class="card-head"><div><span>INTERPRETATION</span><h3>Model Notes</h3></div></div>
+          <div id="modelNotes" class="notes-grid">
+            <div><b>Dataset</b><span>尚未載入</span></div><div><b>Target</b><span>--</span></div><div><b>Features</b><span>--</span></div><div><b>Method</b><span>Ordinary Least Squares</span></div>
+          </div>
+        </article>
+      </section>
+    </section>
+
+    <footer><span>AIoT DIC2 · Multiple Linear Regression</span><span>Built for GitHub Pages · Client-side ML</span></footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
