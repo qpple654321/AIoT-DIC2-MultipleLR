@@ -1,138 +1,163 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DIC2 - Multiple Linear Regression</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#050b14">
+  <title>DIC2 · Feature Selection Explorer</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<header class="site-header">
-  <div class="container header-inner">
+<div class="grid-bg"></div>
+<header class="topbar">
+  <div class="wrap topbar-inner">
     <div>
-      <div class="course">NCHU · AIoT & Data Analytics</div>
-      <h1>DIC2 - Multiple Linear Regression</h1>
-      <p>50 Startups and Boston Housing</p>
+      <p class="eyebrow">NCHU · AIoT & DATA ANALYTICS · DIC-02</p>
+      <h1>Multiple Linear Regression <span>// Feature Selection Explorer</span></h1>
+      <p class="lede">50 Startups · five feature-selection schemes · OLS refit · k = 1–5</p>
     </div>
-    <div class="student">陳浩忻 · 5115056032</div>
+    <div class="identity"><span class="pulse"></span>陳浩忻 · 5115056032</div>
   </div>
 </header>
 
-<main class="container">
-  <section class="card intro">
+<main class="wrap">
+  <section class="panel mission">
     <div>
-      <span class="tag">Assignment</span>
-      <h2>多元線性回歸實作</h2>
-      <p>完成兩個 Multiple Linear Regression problems，並提供下拉選單切換題目與自訂 Dataset URL。預設題目選取後會自動載入資料並執行模型。</p>
+      <span class="label">ASSIGNMENT MODE</span>
+      <h2>50 Startups / Boston Housing</h2>
+      <p>以課堂範本的 Multiple Linear Regression + Feature Selection 流程呈現，並保留 Dataset URL 擴充功能。</p>
     </div>
-    <div class="requirements">
-      <div>✓ 50 Startups</div>
-      <div>✓ Boston Housing</div>
-      <div>✓ Problem 下拉選單</div>
-      <div>✓ 任意 CSV Dataset URL</div>
-    </div>
-  </section>
-
-  <section class="card controls">
-    <h2>1. Problem & Dataset</h2>
-    <div class="form-grid">
+    <div class="mission-controls">
       <label>Problem
         <select id="problemSelect">
-          <option value="startup">50 Startups - Profit Prediction</option>
-          <option value="boston">Boston Housing - MEDV Prediction</option>
-          <option value="custom">Custom Dataset</option>
+          <option value="startup">50 Startups — Feature Selection Explorer</option>
+          <option value="boston">Boston Housing — OLS Baseline</option>
+          <option value="custom">Custom Dataset — OLS Baseline</option>
         </select>
       </label>
       <label>Dataset URL
-        <div class="inline">
-          <input id="datasetUrl" type="url" spellcheck="false">
-          <button id="loadBtn">Load Dataset</button>
-        </div>
+        <div class="url-row"><input id="datasetUrl" type="url"><button id="loadDatasetBtn">LOAD</button></div>
       </label>
-    </div>
-    <div class="custom-row">
-      <label class="file-button">Upload CSV<input id="fileInput" type="file" accept=".csv,text/csv"></label>
-      <span id="status" class="status">Preparing 50 Startups...</span>
+      <span id="datasetStatus" class="status">Reference model data ready.</span>
     </div>
   </section>
 
-  <section class="card" id="datasetSection">
-    <div class="section-title">
-      <div><span class="step">2</span><h2>Dataset Preview</h2></div>
-      <span id="shapeBadge" class="badge">--</span>
-    </div>
-    <p id="datasetDescription" class="section-note">50 Startups：以 R&D Spend、Administration、Marketing Spend、State 預測 Profit。</p>
-    <div id="previewTable" class="table-wrap"><div class="placeholder">Loading dataset...</div></div>
-  </section>
-
-  <section class="card">
-    <div class="section-title"><div><span class="step">3</span><h2>Model Setup</h2></div></div>
-    <div class="model-grid">
-      <div>
-        <label>Target column</label>
-        <select id="targetSelect" disabled></select>
+  <section id="featureExplorer">
+    <section class="panel controls">
+      <div class="control-group">
+        <span class="control-label">01 · Feature-selection scheme</span>
+        <div id="schemeButtons" class="segmented"></div>
       </div>
-      <div>
-        <label>Feature columns</label>
-        <div id="featureList" class="feature-list"><span class="muted">Waiting for dataset...</span></div>
+      <div class="control-group">
+        <span class="control-label">02 · Number of features (k)</span>
+        <div id="kButtons" class="segmented compact"></div>
       </div>
-    </div>
-    <div class="model-meta">
-      <span><b>Algorithm</b> Multiple Linear Regression (OLS)</span>
-      <span><b>Split</b> 80% Train / 20% Test</span>
-      <span><b>Random Seed</b> 42</span>
-      <button id="trainBtn" disabled>Run Regression</button>
-    </div>
-  </section>
+      <p id="selectionHint" class="hint"></p>
+    </section>
 
-  <section class="card result-card">
-    <div class="section-title"><div><span class="step">4</span><h2>Result</h2></div><span id="resultState" class="badge success">Auto training</span></div>
-    <div class="metrics">
-      <div><span>R² Score</span><strong id="r2Value">--</strong></div>
-      <div><span>RMSE</span><strong id="rmseValue">--</strong></div>
-      <div><span>MAE</span><strong id="maeValue">--</strong></div>
-      <div><span>Samples</span><strong id="sampleValue">--</strong></div>
-    </div>
-    <h3>Regression Equation</h3>
-    <div id="equationBox" class="equation">Waiting for model...</div>
-  </section>
+    <section id="kpis" class="kpis"></section>
 
-  <section class="two-col">
-    <article class="card">
-      <h2>5. Regression Coefficients</h2>
-      <div class="table-wrap compact">
-        <table><thead><tr><th>Feature</th><th>Coefficient</th><th>|β| Rank</th></tr></thead><tbody id="coefBody"><tr><td colspan="3">Waiting for model...</td></tr></tbody></table>
+    <section class="panel">
+      <div class="panel-head">
+        <div><span class="label">MODEL BENCHMARK</span><h2>RMSE & R² vs. number of features</h2></div>
+        <span class="chip">5 schemes × 5 feature counts</span>
       </div>
-    </article>
-    <article class="card">
-      <h2>6. Prediction Samples</h2>
-      <div class="table-wrap compact">
-        <table><thead><tr><th>#</th><th>Actual</th><th>Predicted</th><th>Error</th></tr></thead><tbody id="predictionBody"><tr><td colspan="4">Waiting for model...</td></tr></tbody></table>
+      <div class="charts">
+        <figure class="chart-box"><canvas id="rmseChart"></canvas></figure>
+        <figure class="chart-box"><canvas id="r2Chart"></canvas></figure>
       </div>
-    </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><span class="label">SELECTED MODEL</span><h2>Fitted OLS model</h2></div>
+        <span id="modelTag" class="chip cyan">—</span>
+      </div>
+      <pre id="equation" class="equation">Waiting for model data…</pre>
+      <div class="table-scroll">
+        <table class="data">
+          <thead><tr><th>Predictor</th><th>Estimate β</th><th>Std. Error</th><th>t</th><th>p-value</th><th>95% CI</th><th>VIF</th></tr></thead>
+          <tbody id="coefBody"></tbody>
+        </table>
+      </div>
+      <p id="fitStats" class="sub"></p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><span class="label">LIVE INFERENCE</span><h2>Startup profit predictor</h2></div>
+        <span class="chip">uses selected scheme + k</span>
+      </div>
+      <div class="predictor">
+        <form class="pred-inputs" onsubmit="return false">
+          <label>R&D Spend<input id="inRD" type="number" value="100000" min="0"></label>
+          <label>Administration<input id="inAdmin" type="number" value="120000" min="0"></label>
+          <label>Marketing Spend<input id="inMkt" type="number" value="150000" min="0"></label>
+          <label>State<select id="inState"><option>California</option><option>Florida</option><option>New York</option></select></label>
+        </form>
+        <div class="pred-out">
+          <span>Predicted Profit</span>
+          <strong id="predValue">—</strong>
+          <div id="predContrib" class="contrib"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><span class="label">COMPARE ALL 5</span><h2>Best model of each scheme</h2></div>
+        <span class="chip">lowest RMSE</span>
+      </div>
+      <div class="table-scroll">
+        <table class="data"><thead><tr><th>Scheme</th><th>Best k</th><th>Selected features</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody id="bestBody"></tbody></table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><span class="label">DIAGNOSTICS</span><h2>Test-set predictions / residuals</h2></div>
+        <span id="testTag" class="chip">Top 10 by absolute error</span>
+      </div>
+      <div class="table-scroll">
+        <table class="data"><thead><tr><th>Rank</th><th>Row</th><th>Actual</th><th>Predicted</th><th>Residual</th><th>Abs. Error</th><th>Error %</th></tr></thead><tbody id="testBody"></tbody></table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <details>
+        <summary><h2>All 25 Results</h2><span>5 schemes × k=1…5</span></summary>
+        <div class="table-scroll">
+          <table class="data"><thead><tr><th>Scheme</th><th>k</th><th>Selected features</th><th>RMSE</th><th>MAE</th><th>R²</th><th>Adj. R²</th></tr></thead><tbody id="allBody"></tbody></table>
+        </div>
+      </details>
+    </section>
   </section>
 
-  <section class="two-col">
-    <article class="card">
-      <h2>7. Actual vs Predicted</h2>
-      <div class="chart-wrap"><canvas id="predictionChart"></canvas></div>
-    </article>
-    <article class="card">
-      <h2>8. Residual Plot</h2>
-      <div class="chart-wrap"><canvas id="residualChart"></canvas></div>
-    </article>
+  <section id="baselineExplorer" class="panel hidden">
+    <div class="panel-head"><div><span class="label">SECOND PROBLEM</span><h2>Boston Housing / Custom Dataset — OLS Baseline</h2></div></div>
+    <p class="sub">第二題保留 Dataset URL 操作。載入後自動辨識數值欄位，最後一個數值欄位作為 Target，其他數值欄位作為 Features。</p>
+    <div class="baseline-metrics"><div><span>Rows</span><strong id="baseRows">—</strong></div><div><span>Target</span><strong id="baseTarget">—</strong></div><div><span>R²</span><strong id="baseR2">—</strong></div><div><span>RMSE</span><strong id="baseRmse">—</strong></div></div>
+    <pre id="baseEquation" class="equation">Load a dataset to run OLS.</pre>
+    <div id="basePreview" class="table-scroll"></div>
   </section>
 
-  <section class="card discussion">
-    <div class="section-title"><div><span class="step">9</span><h2>Discussion</h2></div></div>
-    <p id="discussionText">模型完成後會自動產生簡短結果說明。</p>
-    <div class="formula-note"><b>OLS：</b> β = (XᵀX)⁻¹Xᵀy</div>
+  <section class="panel prose">
+    <div class="panel-head"><div><span class="label">METHODOLOGY</span><h2>Method & CRISP-DM</h2></div></div>
+    <div class="method-grid">
+      <article><b>Lasso</b><p>L1 regularization ranking → top-k predictors → OLS refit.</p></article>
+      <article><b>Forward SFS</b><p>Sequentially adds the predictor that improves the model most.</p></article>
+      <article><b>RFE</b><p>Recursive feature elimination removes the weakest predictors.</p></article>
+      <article><b>ElasticNet</b><p>L1 + L2 regularization ranking → top-k → OLS refit.</p></article>
+      <article><b>Exhaustive</b><p>Evaluates candidate subsets and selects the best-performing combination.</p></article>
+    </div>
+    <ol class="crisp"><li>Business Understanding — predict startup profit / housing value.</li><li>Data Understanding — inspect predictors, target and categorical variables.</li><li>Data Preparation — encode categories and split data.</li><li>Modeling — five feature-selection schemes with k=1…5, then OLS.</li><li>Evaluation — RMSE, MAE, R², coefficient diagnostics and residuals.</li><li>Deployment — GitHub Pages interactive explorer.</li></ol>
+    <p class="source-note">50 Startups 五方法統計資料採用課程 reference implementation 的公開模型結果；前端互動、版面與第二題 OLS 流程重新實作。</p>
   </section>
 </main>
-
-<footer>AIoT DIC2 · Multiple Linear Regression · qpple654321</footer>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<footer class="wrap footer">DIC-02 · AIoT & Data Analytics · qpple654321</footer>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/huanchen1107/AIoT-DIC2-MultipleLR@main/static/model_data.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>
