@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#050b14">
+  <meta name="theme-color" content="#06101b">
   <title>DIC2 · 多元線性回歸與特徵選擇分析</title>
   <link rel="stylesheet" href="./style.css">
 </head>
@@ -11,29 +11,44 @@
 <div class="grid-bg"></div>
 <header class="topbar">
   <div class="wrap topbar-inner">
-    <div>
+    <div class="brand-block">
       <p class="eyebrow">NCHU · AIoT & DATA ANALYTICS · DIC-02</p>
-      <h1>DIC2 · 多元線性回歸與特徵選擇分析 <span>// Multiple Linear Regression & Feature Selection Explorer</span></h1>
-      <p class="lede">50 Startups · Boston Housing · five feature-selection schemes · OLS refit · k = 1–5</p>
+      <h1>多元線性回歸與特徵選擇分析</h1>
+      <p class="lede">Multiple Linear Regression & Feature Selection Explorer</p>
     </div>
-    <div class="identity"><span class="pulse"></span>陳浩忻 · 5115056032</div>
+    <div class="header-meta">
+      <span class="system-chip"><i></i> ANALYTICS ONLINE</span>
+      <span class="identity">陳浩忻 · 5115056032</span>
+    </div>
   </div>
 </header>
 
 <main class="wrap app-shell">
-  <aside class="side-nav panel" aria-label="分析頁面選單">
-    <div class="nav-title">ANALYSIS MENU</div>
-    <button class="nav-item active" data-tab="results"><span class="nav-icon">◇</span><span><b>模型比較</b><small>Model Comparison</small></span></button>
-    <button class="nav-item" data-tab="features"><span class="nav-icon">▦</span><span><b>特徵分析</b><small>Feature Analysis</small></span></button>
-    <button class="nav-item" data-tab="methods"><span class="nav-icon">⊙</span><span><b>方法說明</b><small>Methodology</small></span></button>
+  <aside class="side-nav" aria-label="分析頁面選單">
+    <div class="side-brand">
+      <span class="side-kicker">DATA WORKBENCH</span>
+      <strong>Regression Lab</strong>
+    </div>
+    <div class="nav-title">ANALYSIS</div>
+    <button class="nav-item active" data-tab="results"><span class="nav-icon">01</span><span><b>模型比較</b><small>Model Comparison</small></span></button>
+    <button class="nav-item" data-tab="features"><span class="nav-icon">02</span><span><b>特徵分析</b><small>Feature Analysis</small></span></button>
+    <button class="nav-item" data-tab="methods"><span class="nav-icon">03</span><span><b>方法說明</b><small>Methodology</small></span></button>
+    <div class="side-foot"><span class="dot"></span> GitHub Pages</div>
   </aside>
 
   <div class="content-area">
+    <section class="overview-strip">
+      <div><span>PROBLEMS</span><strong>2</strong><small>Startup / Housing</small></div>
+      <div><span>SELECTION METHODS</span><strong>5</strong><small>Feature selection</small></div>
+      <div><span>FEATURE COUNT</span><strong>k = 1–5</strong><small>Model search grid</small></div>
+      <div><span>REFIT MODEL</span><strong>OLS</strong><small>Linear regression</small></div>
+    </section>
+
     <section class="panel mission">
-      <div>
-        <span class="label">ASSIGNMENT MODE</span>
-        <h2>50 Startups / Boston Housing</h2>
-        <p>以課堂範本的 Multiple Linear Regression + Feature Selection 流程呈現，並保留 Dataset URL 擴充功能。</p>
+      <div class="mission-copy">
+        <span class="label">ANALYSIS WORKSPACE</span>
+        <h2>Dataset & Experiment Configuration</h2>
+        <p>切換 50 Startups、Boston Housing 或自訂 Dataset URL，並以多元線性回歸與特徵選擇流程進行分析。</p>
       </div>
       <div class="mission-controls">
         <label>Problem
@@ -44,7 +59,7 @@
           </select>
         </label>
         <label>Dataset URL
-          <div class="url-row"><input id="datasetUrl" type="url"><button id="loadDatasetBtn">LOAD</button></div>
+          <div class="url-row"><input id="datasetUrl" type="url"><button id="loadDatasetBtn">LOAD DATA</button></div>
         </label>
         <span id="datasetStatus" class="status">Reference model data ready.</span>
       </div>
@@ -54,11 +69,11 @@
       <div class="tab-panel active" data-panel="results">
         <section class="panel controls">
           <div class="control-group">
-            <span class="control-label">01 · Feature-selection scheme</span>
+            <span class="control-label">FEATURE-SELECTION METHOD</span>
             <div id="schemeButtons" class="segmented"></div>
           </div>
           <div class="control-group">
-            <span class="control-label">02 · Number of features (k)</span>
+            <span class="control-label">NUMBER OF FEATURES (k)</span>
             <div id="kButtons" class="segmented compact"></div>
           </div>
           <p id="selectionHint" class="hint"></p>
@@ -66,13 +81,13 @@
 
         <section id="kpis" class="kpis"></section>
 
-        <section class="panel">
-          <div class="panel-head"><div><span class="label">MODEL BENCHMARK</span><h2>RMSE & R² vs. number of features</h2></div><span class="chip">5 schemes × 5 feature counts</span></div>
+        <section class="panel data-panel">
+          <div class="panel-head"><div><span class="label">PERFORMANCE CURVES</span><h2>RMSE & R² vs. Number of Features</h2><p>比較五種特徵選擇方法在不同 k 值下的模型表現。</p></div><span class="chip">5 methods × 5 feature counts</span></div>
           <div class="charts"><figure class="chart-box"><canvas id="rmseChart"></canvas></figure><figure class="chart-box"><canvas id="r2Chart"></canvas></figure></div>
         </section>
 
-        <section class="panel">
-          <div class="panel-head"><div><span class="label">LIVE INFERENCE</span><h2>Startup profit predictor</h2></div><span class="chip">uses selected scheme + k</span></div>
+        <section class="panel data-panel">
+          <div class="panel-head"><div><span class="label">LIVE INFERENCE</span><h2>Startup Profit Predictor</h2><p>依目前選擇的 method 與 k 即時計算預測結果。</p></div><span class="chip cyan">selected model</span></div>
           <div class="predictor">
             <form class="pred-inputs" onsubmit="return false">
               <label>R&D Spend<input id="inRD" type="number" value="100000" min="0"></label>
@@ -80,60 +95,59 @@
               <label>Marketing Spend<input id="inMkt" type="number" value="150000" min="0"></label>
               <label>State<select id="inState"><option>California</option><option>Florida</option><option>New York</option></select></label>
             </form>
-            <div class="pred-out"><span>Predicted Profit</span><strong id="predValue">—</strong><div id="predContrib" class="contrib"></div></div>
+            <div class="pred-out"><span>PREDICTED PROFIT</span><strong id="predValue">—</strong><div id="predContrib" class="contrib"></div></div>
           </div>
         </section>
 
-        <section class="panel">
-          <div class="panel-head"><div><span class="label">COMPARE ALL 5</span><h2>Best model of each scheme</h2></div><span class="chip">lowest RMSE</span></div>
+        <section class="panel data-panel">
+          <div class="panel-head"><div><span class="label">MODEL LEADERBOARD</span><h2>Best Model of Each Scheme</h2><p>各方法以最低 RMSE 的組合做比較。</p></div><span class="chip">best RMSE</span></div>
           <div class="table-scroll"><table class="data"><thead><tr><th>Scheme</th><th>Best k</th><th>Selected features</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody id="bestBody"></tbody></table></div>
         </section>
 
-        <section class="panel">
-          <div class="panel-head"><div><span class="label">DIAGNOSTICS</span><h2>Test-set predictions / residuals</h2></div><span id="testTag" class="chip">Top 10 by absolute error</span></div>
+        <section class="panel data-panel">
+          <div class="panel-head"><div><span class="label">MODEL DIAGNOSTICS</span><h2>Test-set Predictions / Residuals</h2><p>檢視實際值、預測值與殘差誤差。</p></div><span id="testTag" class="chip">Top 10 by absolute error</span></div>
           <div class="table-scroll"><table class="data"><thead><tr><th>Rank</th><th>Row</th><th>Actual</th><th>Predicted</th><th>Residual</th><th>Abs. Error</th><th>Error %</th></tr></thead><tbody id="testBody"></tbody></table></div>
         </section>
       </div>
 
       <div class="tab-panel" data-panel="features">
-        <section class="panel">
-          <div class="panel-head"><div><span class="label">SELECTED MODEL</span><h2>Feature Combination & Fitted OLS</h2></div><span id="modelTag" class="chip cyan">—</span></div>
+        <section class="panel data-panel">
+          <div class="panel-head"><div><span class="label">SELECTED FEATURE SET</span><h2>Feature Combination & Fitted OLS</h2><p>查看目前特徵組合的迴歸方程式與統計檢定。</p></div><span id="modelTag" class="chip cyan">—</span></div>
           <pre id="equation" class="equation">Waiting for model data…</pre>
           <div class="table-scroll"><table class="data"><thead><tr><th>Predictor</th><th>Estimate β</th><th>Std. Error</th><th>t</th><th>p-value</th><th>95% CI</th><th>VIF</th></tr></thead><tbody id="coefBody"></tbody></table></div>
           <p id="fitStats" class="sub"></p>
         </section>
 
-        <section class="panel">
+        <section class="panel data-panel">
           <details open>
-            <summary><h2>All 25 Feature Combinations</h2><span>5 schemes × k=1…5</span></summary>
+            <summary><div><span class="label">MODEL GRID</span><h2>All 25 Feature Combinations</h2></div><span class="chip">5 methods × k=1…5</span></summary>
             <div class="table-scroll"><table class="data"><thead><tr><th>Scheme</th><th>k</th><th>Selected features</th><th>RMSE</th><th>MAE</th><th>R²</th><th>Adj. R²</th></tr></thead><tbody id="allBody"></tbody></table></div>
           </details>
         </section>
       </div>
 
       <div class="tab-panel" data-panel="methods">
-        <section class="panel prose">
-          <div class="panel-head"><div><span class="label">METHODOLOGY</span><h2>Feature Selection Methods</h2></div></div>
+        <section class="panel data-panel prose">
+          <div class="panel-head"><div><span class="label">FEATURE SELECTION</span><h2>Methodology</h2><p>五種方法用來決定最有解釋力與預測價值的特徵組合。</p></div></div>
           <div class="method-grid">
-            <article><b>Lasso</b><p>L1 regularization ranking → top-k predictors → OLS refit.</p></article>
-            <article><b>Forward SFS</b><p>Sequentially adds the predictor that improves the model most.</p></article>
-            <article><b>RFE</b><p>Recursive feature elimination removes the weakest predictors.</p></article>
-            <article><b>ElasticNet</b><p>L1 + L2 regularization ranking → top-k → OLS refit.</p></article>
-            <article><b>Exhaustive</b><p>Evaluates candidate subsets and selects the best-performing combination.</p></article>
+            <article><span>01</span><b>Lasso</b><p>L1 regularization ranking → top-k predictors → OLS refit.</p></article>
+            <article><span>02</span><b>Forward SFS</b><p>Sequentially adds the predictor that improves the model most.</p></article>
+            <article><span>03</span><b>RFE</b><p>Recursive feature elimination removes the weakest predictors.</p></article>
+            <article><span>04</span><b>ElasticNet</b><p>L1 + L2 regularization ranking → top-k → OLS refit.</p></article>
+            <article><span>05</span><b>Exhaustive</b><p>Evaluates candidate subsets and selects the best-performing combination.</p></article>
           </div>
         </section>
 
-        <section class="panel prose">
-          <div class="panel-head"><div><span class="label">CRISP-DM</span><h2>Experiment Flow</h2></div></div>
+        <section class="panel data-panel prose">
+          <div class="panel-head"><div><span class="label">EXPERIMENT PIPELINE</span><h2>CRISP-DM Flow</h2></div></div>
           <ol class="crisp"><li>Business Understanding — predict startup profit / housing value.</li><li>Data Understanding — inspect predictors, target and categorical variables.</li><li>Data Preparation — encode categories and split data.</li><li>Modeling — five feature-selection schemes with k=1…5, then OLS.</li><li>Evaluation — RMSE, MAE, R², coefficient diagnostics and residuals.</li><li>Deployment — GitHub Pages interactive explorer.</li></ol>
           <p class="source-note">50 Startups 五方法統計資料採用課程 reference implementation 的公開模型結果；前端互動、版面與第二題 OLS 流程重新實作。</p>
         </section>
       </div>
     </section>
 
-    <section id="baselineExplorer" class="panel hidden">
-      <div class="panel-head"><div><span class="label">SECOND PROBLEM</span><h2>Boston Housing / Custom Dataset — OLS Baseline</h2></div></div>
-      <p class="sub">第二題保留 Dataset URL 操作。載入後自動辨識數值欄位，最後一個數值欄位作為 Target，其他數值欄位作為 Features。</p>
+    <section id="baselineExplorer" class="panel data-panel hidden">
+      <div class="panel-head"><div><span class="label">SECOND PROBLEM</span><h2>Boston Housing / Custom Dataset — OLS Baseline</h2><p>自動辨識數值欄位並建立 baseline regression。</p></div></div>
       <div class="baseline-metrics"><div><span>Rows</span><strong id="baseRows">—</strong></div><div><span>Target</span><strong id="baseTarget">—</strong></div><div><span>R²</span><strong id="baseR2">—</strong></div><div><span>RMSE</span><strong id="baseRmse">—</strong></div></div>
       <pre id="baseEquation" class="equation">Load a dataset to run OLS.</pre>
       <div id="basePreview" class="table-scroll"></div>
