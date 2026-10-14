@@ -2,7 +2,7 @@
 
 國立中興大學 **AIoT & Data Analytics** 課程 DIC2 作業。
 
-本專案以 **Multiple Linear Regression（多元線性回歸）** 為核心，完成 50 Startups 與 Boston Housing 兩個資料集的分析，並加入五種 Feature Selection 方法比較與互動式資料分析介面。
+本專案以 **Multiple Linear Regression（多元線性回歸）** 為核心，完成 **50 Startups** 與 **Boston Housing** 兩個資料集的分析，並加入五種 Feature Selection 方法比較、互動式模型結果、Live Prediction、Residual Analysis 與 Data Analytics Dashboard。
 
 ## Student
 
@@ -12,8 +12,8 @@
 
 ## Live Demo
 
-- GitHub Pages：https://qpple654321.github.io/AIoT-DIC2-MultipleLR/
-- GitHub Repository：https://github.com/qpple654321/AIoT-DIC2-MultipleLR
+- **GitHub Pages**：https://qpple654321.github.io/AIoT-DIC2-MultipleLR/
+- **GitHub Repository**：https://github.com/qpple654321/AIoT-DIC2-MultipleLR
 
 ## Assignment Topics
 
@@ -21,7 +21,7 @@
 
 以 `R&D Spend`、`Administration`、`Marketing Spend` 與 `State` 預測 `Profit`。
 
-除了 Multiple Linear Regression 外，加入以下五種 Feature Selection 方法進行比較：
+Feature Selection 方法：
 
 1. Lasso（L1 Ranking）
 2. Forward SFS
@@ -29,38 +29,46 @@
 4. ElasticNet
 5. Exhaustive Search
 
-每一種方法皆可切換 `k = 1 ~ 5` 個特徵，並比較：
+每一種方法皆可切換 `k = 1 ~ 5` 個特徵，並呈現：
 
 - RMSE
 - MAE
 - R²
 - Adjusted R²
 - Selected Features
+- Regression Equation
 - Regression Coefficients
+- Standard Error
+- t-statistic
 - p-value
 - 95% Confidence Interval
 - VIF
 - Prediction / Residual Results
+- Best model of each scheme
+- All 25 feature-selection results
+- Approx. 95% prediction range
 
 ### 2. Boston Housing
 
-使用 Boston Housing 數值特徵預測 `MEDV`，並以 OLS Multiple Linear Regression 建立 baseline model。
+以 Boston Housing 數值特徵預測 `MEDV`，並建立 OLS Multiple Linear Regression baseline model。
 
-## Main Functions
+網站亦保留 **Custom Dataset URL** 功能，可輸入其他公開 CSV URL 執行 OLS baseline analysis。
 
-網站提供三個主要分析頁面：
+## Interactive Functions
 
-### 模型比較
+### 模型比較 / Model Comparison
 
 - 五種 Feature Selection 方法切換
-- `k = 1 ~ 5` 特徵數切換
+- `k = 1 ~ 5` Feature Count 切換
 - RMSE / R² Performance Curves
 - KPI 指標
+- Key Findings / Model Selection Summary
 - Best Model of Each Scheme
 - Startup Profit Live Predictor
+- Approx. 95% prediction range
 - Test-set Predictions / Residuals
 
-### 特徵分析
+### 特徵分析 / Feature Analysis
 
 - Selected Feature Combination
 - Fitted OLS Equation
@@ -72,7 +80,7 @@
 - VIF
 - All 25 Feature Combinations
 
-### 方法說明
+### 方法說明 / Methodology
 
 - Lasso
 - Forward SFS
@@ -80,10 +88,22 @@
 - ElasticNet
 - Exhaustive Search
 - CRISP-DM Experiment Flow
+- Experiment Limitations / Validation Notes
 
-## Dataset Support
+## Additional UI Features
 
-內建兩組作業資料：
+- 深色 Data Analytics Workbench 介面
+- Light / Dark Theme 切換
+- Responsive Layout
+- URL Query Parameter 支援
+
+例如可直接開啟指定方法、k 與分析頁面：
+
+```text
+?scheme=RFE&k=2&tab=features
+```
+
+## Dataset Sources
 
 ### 50 Startups
 
@@ -97,9 +117,7 @@ https://raw.githubusercontent.com/Avik-Jain/100-Days-Of-ML-Code/master/datasets/
 https://raw.githubusercontent.com/selva86/datasets/master/BostonHousing.csv
 ```
 
-另外保留 **Custom Dataset URL** 功能，可輸入公開 CSV URL 執行 OLS baseline analysis。
-
-> 注意：公開 Dataset URL 仍受瀏覽器 CORS Policy 影響。
+> Custom Dataset URL 受瀏覽器 CORS Policy 影響，來源需允許跨來源存取。
 
 ## Model Workflow
 
@@ -127,6 +145,33 @@ OLS 核心公式：
 β = (XᵀX)⁻¹Xᵀy
 ```
 
+## Interpretation Notes
+
+- RMSE / MAE 越低，代表預測誤差越小。
+- R² 越接近 1，代表模型解釋能力越高。
+- VIF 可用於觀察多重共線性。
+- Feature Selection 的目的在於找出較具預測價值的特徵組合，不代表因果關係。
+- 50 Startups 僅有 50 筆資料，test set 與不同資料切分下的結果可能有較大波動。
+- 網站顯示的 Approx. 95% prediction range 以目前模型 RMSE × 1.96 做直觀近似，不等同完整 OLS prediction interval。
+
+## Implementation Note
+
+50 Startups 五種 Feature Selection 的統計模型資料採用課程公開 reference implementation 的結果；本專案重新實作：
+
+- 前端互動
+- Data Analytics Dashboard
+- 方法 / k 切換
+- KPI 與圖表
+- Key Findings
+- Live Predictor
+- Approx. 95% prediction range
+- URL Query Navigation
+- Theme Switcher
+- Boston Housing OLS baseline
+- Custom Dataset URL workflow
+
+因此網站主要用途為整理、比較與互動呈現 Multiple Linear Regression / Feature Selection 的分析成果。
+
 ## Tech Stack
 
 - HTML5
@@ -137,21 +182,9 @@ OLS 核心公式：
 - GitHub Pages
 - GitHub Actions
 
-## UI Design
-
-前端以 **Data Analytics Workbench** 為設計方向，採深色科技風介面，並將分析內容分為：
-
-- Model Comparison
-- Feature Analysis
-- Methodology
-
-讓模型指標、圖表、特徵組合與統計檢定結果可以在同一個網站中快速切換查看。
-
 ## Deployment
 
 本專案使用 GitHub Actions 自動部署至 GitHub Pages。
-
-Workflow：
 
 ```text
 .github/workflows/pages.yml
@@ -171,8 +204,9 @@ python -m http.server 8000
 http://localhost:8000
 ```
 
-## Reference
+## References
 
-本作業實作與介面設計參考課程範例與課堂同學展示方式，並重新整理為自己的 Data Analytics Dashboard。
+本作業功能架構參考課程示範與同學公開展示成果，再依作業需求重新整理為自己的 Data Analytics Workbench。
 
-50 Startups 五種 Feature Selection 的公開統計模型資料採用課程 reference implementation，前端互動、資料呈現、頁面架構以及 Boston Housing / Custom Dataset OLS 流程皆重新實作。
+- Course Reference：https://huanchen1107.github.io/AIoT-DIC2-MultipleLR/
+- Feature Selection Example：https://yotsubamomo.github.io/aiot-classwork/week06/
