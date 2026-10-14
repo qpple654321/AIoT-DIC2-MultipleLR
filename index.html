@@ -1,151 +1,138 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#08121f" />
-  <title>DIC2 · Multiple Linear Regression Lab</title>
-  <meta name="description" content="NCHU AIoT DIC2 Multiple Linear Regression - 50 Startups & Boston Housing" />
-  <link rel="stylesheet" href="./style.css" />
-  <link rel="stylesheet" href="./dic2.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIC2 - Multiple Linear Regression</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div class="ambient a1"></div><div class="ambient a2"></div>
-  <header class="topbar">
+<header class="site-header">
+  <div class="container header-inner">
     <div>
-      <div class="kicker">NCHU · AIoT & DATA ANALYTICS</div>
-      <h1>DIC2 · Multiple Linear Regression</h1>
+      <div class="course">NCHU · AIoT & Data Analytics</div>
+      <h1>DIC2 - Multiple Linear Regression</h1>
+      <p>50 Startups and Boston Housing</p>
     </div>
-    <div class="student"><span class="online"></span> 陳浩忻 · 5115056032</div>
-  </header>
+    <div class="student">陳浩忻 · 5115056032</div>
+  </div>
+</header>
 
-  <main class="shell">
-    <section class="assignment-banner panel">
-      <div>
-        <span class="eyebrow">ASSIGNMENT REQUIREMENTS</span>
-        <h2>50 Startups & Boston Housing</h2>
-        <p>同一個網站完成兩個 Multiple Linear Regression problems，並支援自訂 Dataset URL。</p>
-      </div>
-      <div class="requirement-list">
-        <span class="requirement done">✓ 兩種 Problem 下拉切換</span>
-        <span class="requirement done">✓ 任意 CSV Dataset URL</span>
-        <span class="requirement extra">＋ CSV Upload / Target / Features 自選</span>
-      </div>
-    </section>
+<main class="container">
+  <section class="card intro">
+    <div>
+      <span class="tag">Assignment</span>
+      <h2>多元線性回歸實作</h2>
+      <p>完成兩個 Multiple Linear Regression problems，並提供下拉選單切換題目與自訂 Dataset URL。預設題目選取後會自動載入資料並執行模型。</p>
+    </div>
+    <div class="requirements">
+      <div>✓ 50 Startups</div>
+      <div>✓ Boston Housing</div>
+      <div>✓ Problem 下拉選單</div>
+      <div>✓ 任意 CSV Dataset URL</div>
+    </div>
+  </section>
 
-    <section class="hero panel">
-      <div>
-        <span class="eyebrow">INTERACTIVE MACHINE LEARNING</span>
-        <h2>多元線性回歸分析儀表板</h2>
-        <p>選擇 50 Startups、Boston Housing 或自己的 CSV，完成資料載入、特徵設定、模型訓練與結果分析。</p>
-      </div>
-      <div class="formula">
-        <span>MODEL</span>
-        <strong>ŷ = β₀ + β₁x₁ + β₂x₂ + ··· + βₚxₚ</strong>
-        <small>Ordinary Least Squares · 80/20 Train-Test Split</small>
-      </div>
-    </section>
-
-    <section class="result-summary panel" aria-label="DIC2 Result Summary">
-      <div class="summary-title"><span>RESULT</span><h3>DIC2 Analysis Summary</h3></div>
-      <div class="summary-grid">
-        <div><span>PROBLEM</span><strong id="summaryProblem">50 Startups</strong></div>
-        <div><span>DATASET</span><strong id="summaryDataset">Waiting for load</strong></div>
-        <div><span>TARGET</span><strong id="summaryTarget">Profit</strong></div>
-        <div><span>MODEL</span><strong>Multiple Linear Regression</strong></div>
-        <div><span>TEST R²</span><strong id="summaryR2">--</strong></div>
-        <div><span>SPLIT</span><strong id="summarySplit">80% Train / 20% Test</strong></div>
-      </div>
-      <p id="summaryMessage" class="summary-message">Preset problems auto-load and train when selected; Custom Dataset remains manually configurable.</p>
-    </section>
-
-    <section class="workspace">
-      <aside class="panel controls">
-        <div class="section-head"><span>01</span><div><b>Problem & Dataset</b><small>選擇題目或載入自己的 CSV</small></div></div>
-
-        <label>Problem</label>
+  <section class="card controls">
+    <h2>1. Problem & Dataset</h2>
+    <div class="form-grid">
+      <label>Problem
         <select id="problemSelect">
-          <option value="startup">50 Startups — Profit Prediction</option>
-          <option value="boston">Boston Housing — MEDV Prediction</option>
+          <option value="startup">50 Startups - Profit Prediction</option>
+          <option value="boston">Boston Housing - MEDV Prediction</option>
           <option value="custom">Custom Dataset</option>
         </select>
-
-        <label>Dataset URL</label>
-        <div class="url-row">
-          <input id="datasetUrl" type="url" spellcheck="false" />
-          <button id="loadUrlBtn" class="btn secondary">Load</button>
+      </label>
+      <label>Dataset URL
+        <div class="inline">
+          <input id="datasetUrl" type="url" spellcheck="false">
+          <button id="loadBtn">Load Dataset</button>
         </div>
-        <div class="hint">預設題目會自動載入與訓練；也可貼上公開 CSV Raw URL。若來源限制 CORS，可改用下方本機上傳。</div>
+      </label>
+    </div>
+    <div class="custom-row">
+      <label class="file-button">Upload CSV<input id="fileInput" type="file" accept=".csv,text/csv"></label>
+      <span id="status" class="status">Preparing 50 Startups...</span>
+    </div>
+  </section>
 
-        <label class="upload-label">或上傳 CSV
-          <input id="fileInput" type="file" accept=".csv,text/csv" />
-          <span>選擇檔案</span>
-        </label>
+  <section class="card" id="datasetSection">
+    <div class="section-title">
+      <div><span class="step">2</span><h2>Dataset Preview</h2></div>
+      <span id="shapeBadge" class="badge">--</span>
+    </div>
+    <p id="datasetDescription" class="section-note">50 Startups：以 R&D Spend、Administration、Marketing Spend、State 預測 Profit。</p>
+    <div id="previewTable" class="table-wrap"><div class="placeholder">Loading dataset...</div></div>
+  </section>
 
-        <div id="dataStatus" class="status idle">等待載入資料</div>
-
-        <div class="divider"></div>
-        <div class="section-head"><span>02</span><div><b>Model Setup</b><small>選擇預測目標與輸入特徵</small></div></div>
-
+  <section class="card">
+    <div class="section-title"><div><span class="step">3</span><h2>Model Setup</h2></div></div>
+    <div class="model-grid">
+      <div>
         <label>Target column</label>
         <select id="targetSelect" disabled></select>
-
+      </div>
+      <div>
         <label>Feature columns</label>
-        <div id="featureList" class="feature-list disabled"><div class="empty">載入資料後顯示欄位</div></div>
+        <div id="featureList" class="feature-list"><span class="muted">Waiting for dataset...</span></div>
+      </div>
+    </div>
+    <div class="model-meta">
+      <span><b>Algorithm</b> Multiple Linear Regression (OLS)</span>
+      <span><b>Split</b> 80% Train / 20% Test</span>
+      <span><b>Random Seed</b> 42</span>
+      <button id="trainBtn" disabled>Run Regression</button>
+    </div>
+  </section>
 
-        <div class="button-row">
-          <button id="selectNumericBtn" class="btn ghost" disabled>選取數值欄位</button>
-          <button id="trainBtn" class="btn primary" disabled>Train Model</button>
-        </div>
-      </aside>
+  <section class="card result-card">
+    <div class="section-title"><div><span class="step">4</span><h2>Result</h2></div><span id="resultState" class="badge success">Auto training</span></div>
+    <div class="metrics">
+      <div><span>R² Score</span><strong id="r2Value">--</strong></div>
+      <div><span>RMSE</span><strong id="rmseValue">--</strong></div>
+      <div><span>MAE</span><strong id="maeValue">--</strong></div>
+      <div><span>Samples</span><strong id="sampleValue">--</strong></div>
+    </div>
+    <h3>Regression Equation</h3>
+    <div id="equationBox" class="equation">Waiting for model...</div>
+  </section>
 
-      <section class="results">
-        <div class="kpi-grid">
-          <div class="kpi panel"><span>R² SCORE</span><strong id="r2Value">--</strong><small>越接近 1 越佳</small></div>
-          <div class="kpi panel"><span>RMSE</span><strong id="rmseValue">--</strong><small>Root Mean Squared Error</small></div>
-          <div class="kpi panel"><span>MAE</span><strong id="maeValue">--</strong><small>Mean Absolute Error</small></div>
-          <div class="kpi panel"><span>SAMPLES</span><strong id="sampleValue">--</strong><small id="splitText">Train / Test</small></div>
-        </div>
+  <section class="two-col">
+    <article class="card">
+      <h2>5. Regression Coefficients</h2>
+      <div class="table-wrap compact">
+        <table><thead><tr><th>Feature</th><th>Coefficient</th><th>|β| Rank</th></tr></thead><tbody id="coefBody"><tr><td colspan="3">Waiting for model...</td></tr></tbody></table>
+      </div>
+    </article>
+    <article class="card">
+      <h2>6. Prediction Samples</h2>
+      <div class="table-wrap compact">
+        <table><thead><tr><th>#</th><th>Actual</th><th>Predicted</th><th>Error</th></tr></thead><tbody id="predictionBody"><tr><td colspan="4">Waiting for model...</td></tr></tbody></table>
+      </div>
+    </article>
+  </section>
 
-        <div class="chart-grid">
-          <article class="panel chart-card">
-            <div class="card-head"><div><span>MODEL FIT</span><h3>Actual vs Predicted</h3></div><div class="legend-dot">Test set</div></div>
-            <div class="chart-wrap"><canvas id="predictionChart"></canvas></div>
-          </article>
-          <article class="panel chart-card">
-            <div class="card-head"><div><span>ERROR ANALYSIS</span><h3>Residual Plot</h3></div><div class="legend-dot">Residual = y − ŷ</div></div>
-            <div class="chart-wrap"><canvas id="residualChart"></canvas></div>
-          </article>
-        </div>
+  <section class="two-col">
+    <article class="card">
+      <h2>7. Actual vs Predicted</h2>
+      <div class="chart-wrap"><canvas id="predictionChart"></canvas></div>
+    </article>
+    <article class="card">
+      <h2>8. Residual Plot</h2>
+      <div class="chart-wrap"><canvas id="residualChart"></canvas></div>
+    </article>
+  </section>
 
-        <div class="detail-grid">
-          <article class="panel coeff-card">
-            <div class="card-head"><div><span>MODEL PARAMETERS</span><h3>Regression Coefficients</h3></div></div>
-            <div id="equationBox" class="equation-box">Train model to view equation.</div>
-            <div class="table-scroll"><table><thead><tr><th>Feature</th><th>Coefficient</th><th>|β| Rank</th></tr></thead><tbody id="coefBody"><tr><td colspan="3" class="muted">尚未訓練模型</td></tr></tbody></table></div>
-          </article>
-          <article class="panel preview-card">
-            <div class="card-head"><div><span>DATA CHECK</span><h3>Dataset Preview</h3></div><span id="shapeBadge" class="badge">-- rows</span></div>
-            <div id="previewTable" class="table-scroll"><div class="empty">尚未載入資料</div></div>
-          </article>
-        </div>
+  <section class="card discussion">
+    <div class="section-title"><div><span class="step">9</span><h2>Discussion</h2></div></div>
+    <p id="discussionText">模型完成後會自動產生簡短結果說明。</p>
+    <div class="formula-note"><b>OLS：</b> β = (XᵀX)⁻¹Xᵀy</div>
+  </section>
+</main>
 
-        <article class="panel notes">
-          <div class="card-head"><div><span>INTERPRETATION</span><h3>Model Notes</h3></div></div>
-          <div id="modelNotes" class="notes-grid">
-            <div><b>Dataset</b><span>尚未載入</span></div><div><b>Target</b><span>--</span></div><div><b>Features</b><span>--</span></div><div><b>Method</b><span>Ordinary Least Squares</span></div>
-          </div>
-        </article>
-      </section>
-    </section>
-
-    <footer><span>AIoT DIC2 · Multiple Linear Regression</span><span>GitHub Pages · qpple654321</span></footer>
-  </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="./app.js"></script>
-  <script src="./dic2-summary.js"></script>
-  <script src="./autoload.js"></script>
+<footer>AIoT DIC2 · Multiple Linear Regression · qpple654321</footer>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="./app.js"></script>
 </body>
 </html>
