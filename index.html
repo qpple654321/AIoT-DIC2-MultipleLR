@@ -7,29 +7,56 @@
   <title>DIC2 · Multiple Linear Regression Lab</title>
   <meta name="description" content="NCHU AIoT DIC2 Multiple Linear Regression - 50 Startups & Boston Housing" />
   <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./dic2.css" />
 </head>
 <body>
   <div class="ambient a1"></div><div class="ambient a2"></div>
   <header class="topbar">
     <div>
       <div class="kicker">NCHU · AIoT & DATA ANALYTICS</div>
-      <h1>Multiple Linear Regression Lab</h1>
+      <h1>DIC2 · Multiple Linear Regression</h1>
     </div>
-    <div class="student"><span class="online"></span> DIC2 · 陳浩忻 · 5115056032</div>
+    <div class="student"><span class="online"></span> 陳浩忻 · 5115056032</div>
   </header>
 
   <main class="shell">
+    <section class="assignment-banner panel">
+      <div>
+        <span class="eyebrow">ASSIGNMENT REQUIREMENTS</span>
+        <h2>50 Startups & Boston Housing</h2>
+        <p>同一個網站完成兩個 Multiple Linear Regression problems，並支援自訂 Dataset URL。</p>
+      </div>
+      <div class="requirement-list">
+        <span class="requirement done">✓ 兩種 Problem 下拉切換</span>
+        <span class="requirement done">✓ 任意 CSV Dataset URL</span>
+        <span class="requirement extra">＋ CSV Upload / Target / Features 自選</span>
+      </div>
+    </section>
+
     <section class="hero panel">
       <div>
         <span class="eyebrow">INTERACTIVE MACHINE LEARNING</span>
         <h2>多元線性回歸分析儀表板</h2>
-        <p>支援 50 Startups、Boston Housing 與自訂 CSV。可自行選擇 Target / Features，並即時計算 R²、RMSE、MAE、迴歸係數與殘差。</p>
+        <p>選擇 50 Startups、Boston Housing 或自己的 CSV，完成資料載入、特徵設定、模型訓練與結果分析。</p>
       </div>
       <div class="formula">
         <span>MODEL</span>
         <strong>ŷ = β₀ + β₁x₁ + β₂x₂ + ··· + βₚxₚ</strong>
         <small>Ordinary Least Squares · 80/20 Train-Test Split</small>
       </div>
+    </section>
+
+    <section class="result-summary panel" aria-label="DIC2 Result Summary">
+      <div class="summary-title"><span>RESULT</span><h3>DIC2 Analysis Summary</h3></div>
+      <div class="summary-grid">
+        <div><span>PROBLEM</span><strong id="summaryProblem">50 Startups</strong></div>
+        <div><span>DATASET</span><strong id="summaryDataset">Waiting for load</strong></div>
+        <div><span>TARGET</span><strong id="summaryTarget">Profit</strong></div>
+        <div><span>MODEL</span><strong>Multiple Linear Regression</strong></div>
+        <div><span>TEST R²</span><strong id="summaryR2">--</strong></div>
+        <div><span>SPLIT</span><strong id="summarySplit">80% Train / 20% Test</strong></div>
+      </div>
+      <p id="summaryMessage" class="summary-message">Step 1：選擇 Problem → Step 2：載入 Dataset → Step 3：Train Model → Step 4：查看 Result。</p>
     </section>
 
     <section class="workspace">
@@ -48,7 +75,7 @@
           <input id="datasetUrl" type="url" spellcheck="false" />
           <button id="loadUrlBtn" class="btn secondary">Load</button>
         </div>
-        <div class="hint">可貼上公開 CSV Raw URL；網站若限制 CORS，可改用下方本機上傳。</div>
+        <div class="hint">可貼上公開 CSV Raw URL；若來源限制 CORS，可改用下方本機上傳。</div>
 
         <label class="upload-label">或上傳 CSV
           <input id="fileInput" type="file" accept=".csv,text/csv" />
@@ -112,11 +139,12 @@
       </section>
     </section>
 
-    <footer><span>AIoT DIC2 · Multiple Linear Regression</span><span>Built for GitHub Pages · Client-side ML</span></footer>
+    <footer><span>AIoT DIC2 · Multiple Linear Regression</span><span>GitHub Pages · qpple654321</span></footer>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="./app.js"></script>
+  <script src="./dic2-summary.js"></script>
 </body>
 </html>
