@@ -56,7 +56,7 @@
         <div><span>TEST R²</span><strong id="summaryR2">--</strong></div>
         <div><span>SPLIT</span><strong id="summarySplit">80% Train / 20% Test</strong></div>
       </div>
-      <p id="summaryMessage" class="summary-message">Step 1：選擇 Problem → Step 2：載入 Dataset → Step 3：Train Model → Step 4：查看 Result。</p>
+      <p id="summaryMessage" class="summary-message">Preset problems auto-load and train when selected; Custom Dataset remains manually configurable.</p>
     </section>
 
     <section class="workspace">
@@ -75,7 +75,7 @@
           <input id="datasetUrl" type="url" spellcheck="false" />
           <button id="loadUrlBtn" class="btn secondary">Load</button>
         </div>
-        <div class="hint">可貼上公開 CSV Raw URL；若來源限制 CORS，可改用下方本機上傳。</div>
+        <div class="hint">預設題目會自動載入與訓練；也可貼上公開 CSV Raw URL。若來源限制 CORS，可改用下方本機上傳。</div>
 
         <label class="upload-label">或上傳 CSV
           <input id="fileInput" type="file" accept=".csv,text/csv" />
@@ -146,5 +146,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="./app.js"></script>
   <script src="./dic2-summary.js"></script>
+  <script src="./autoload.js"></script>
 </body>
 </html>
