@@ -156,7 +156,7 @@ OLS 核心公式：
 
 ## Implementation Note
 
-50 Startups 五種 Feature Selection 的統計模型資料採用課程公開 reference implementation 的結果；本專案重新實作：
+50 Startups 的五種 Feature Selection 結果與模型資料已內建於本專案，網站包含：
 
 - 前端互動
 - Data Analytics Dashboard
@@ -170,7 +170,7 @@ OLS 核心公式：
 - Boston Housing OLS baseline
 - Custom Dataset URL workflow
 
-因此網站主要用途為整理、比較與互動呈現 Multiple Linear Regression / Feature Selection 的分析成果。
+網站可直接由本 repository 完成 Multiple Linear Regression / Feature Selection 的互動分析與結果呈現，不需在執行時載入課程範例的模型資料。
 
 ## Tech Stack
 

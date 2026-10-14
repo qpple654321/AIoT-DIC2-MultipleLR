@@ -61,7 +61,7 @@
         <label>Dataset URL
           <div class="url-row"><input id="datasetUrl" type="url"><button id="loadDatasetBtn">LOAD DATA</button></div>
         </label>
-        <span id="datasetStatus" class="status">Reference model data ready.</span>
+        <span id="datasetStatus" class="status">Model data ready.</span>
       </div>
     </section>
 
@@ -141,7 +141,7 @@
         <section class="panel data-panel prose">
           <div class="panel-head"><div><span class="label">EXPERIMENT PIPELINE</span><h2>CRISP-DM Flow</h2></div></div>
           <ol class="crisp"><li>Business Understanding — predict startup profit / housing value.</li><li>Data Understanding — inspect predictors, target and categorical variables.</li><li>Data Preparation — encode categories and split data.</li><li>Modeling — five feature-selection schemes with k=1…5, then OLS.</li><li>Evaluation — RMSE, MAE, R², coefficient diagnostics and residuals.</li><li>Deployment — GitHub Pages interactive explorer.</li></ol>
-          <p class="source-note">50 Startups 五方法統計資料採用課程 reference implementation 的公開模型結果；前端互動、版面與第二題 OLS 流程重新實作。</p>
+          <p class="source-note">50 Startups 的五種 Feature Selection 結果已內建於本專案，前端互動、視覺化、Boston Housing 與 Custom Dataset OLS 流程皆由本專案直接提供。</p>
         </section>
       </div>
     </section>
@@ -157,7 +157,7 @@
 <footer class="wrap footer">DIC-02 · AIoT & Data Analytics · qpple654321</footer>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/huanchen1107/AIoT-DIC2-MultipleLR@main/static/model_data.js"></script>
+<script src="./static/model_data.js"></script>
 <script src="./app.js"></script>
 <script src="./enhancements.js"></script>
 </body>
