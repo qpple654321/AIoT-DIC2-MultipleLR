@@ -4,6 +4,28 @@
 
 這是可直接部署在 **GitHub Pages** 的純前端網站（HTML / CSS / JavaScript），不需要後端，也不需要 Python 套件。所有模型訓練、RFE 特徵選擇和預測計算都在瀏覽器完成。
 
+## 一鍵使用公開資料（加分功能）
+
+首頁提供 4 個「一鍵套用並訓練」快捷卡片：
+
+| 快捷選項 | 使用的 CSV | 目標欄位 | 性質 |
+|---|---|---|---|
+| Steam 遊戲價格 | `steam.csv` | `price` | 正式 Problem 01，15 個原始輸入特徵 |
+| Steam 遊玩時間 | `steam.csv` | `average_playtime` | 正式 Problem 02，14 個原始輸入特徵 |
+| 全球遊戲銷量 | `video_game_sales.csv` | `Global_Sales` | 延伸實驗；避免區域銷量加總造成資料洩漏 |
+| 50 Startups | `50_Startups.csv` | `Profit` | 老師提供的自訂資料示範；原始特徵數未達主作業要求 |
+
+點選卡片會自動更新 Problem 下拉選單、CSV URL、Target，然後載入 CSV 並訓練模型，結果都是瀏覽器運算，並非預填成績。
+
+**加總分 1 分**：主選單可切換 Steam 價格預測、Steam 平均遊玩時間預測兩種問題。
+
+**加總分 2 分**：選擇「自訂資料集 · CSV URL / 上傳」後，可自行貼上任意公開 CSV（HTTP/HTTPS）網址、選擇數值 Target 或上傳本機 CSV。遠端網址需允許 CORS，且資料應有足夠的有效數值／低基數類別特徵以完成回歸；此限制不代表每一個任意 CSV 都能建立有效回歸模型。
+
+來源：
+- Steam CSV：https://raw.githubusercontent.com/yilinpotato/BigData-App/main/dataset/steam.csv
+- Video Game Sales CSV：https://raw.githubusercontent.com/stephenbeese/Video-Game-Sales-Analysis/main/data/raw/video_game_sales.csv
+- 50 Startups CSV：https://raw.githubusercontent.com/Avik-Jain/100-Days-Of-ML-Code/master/datasets/50_Startups.csv
+
 ## 網站功能
 
 - **兩種問題切換（加分 +1）**：Steam 遊戲價格 `price`；Steam 平均遊玩時間 `average_playtime`。
