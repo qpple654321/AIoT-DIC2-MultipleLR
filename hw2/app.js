@@ -130,6 +130,10 @@ function runPrediction(){if(!state.result)return;const r=state.result;
  $('predict-note').textContent=`此區間使用校準集求得的 ±${fmt(r.q,2)} ${r.unit}；統計上的邊際覆蓋率目標為 95%，不表示單筆預測有 95% 機率正確。`;}
 function resetFeatures(){if(!state.result)return;renderPredictFields(state.result);}
 function exportResults(){if(!state.result)return;const result=state.result;const copy={...result,model:{...result.model},scatter:result.scatter};const blob=new Blob([JSON.stringify(copy,null,2)],{type:'application/json;charset=utf-8'}),href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;a.download=`steam_hw2_${result.problem}_results.json`;a.click();setTimeout(()=>URL.revokeObjectURL(href),1000);}
+$('open-custom-data').addEventListener('click',()=>{
+ userAction();$('problem-select').value='custom';showProblem();
+ $('custom-url').focus();$('custom-settings').scrollIntoView({behavior:'smooth',block:'center'});
+});
 document.querySelectorAll('[data-preset]').forEach(button=>button.addEventListener('click',()=>usePreset(button.dataset.preset)));
 ['steam-url','custom-url'].forEach(id=>$(id).addEventListener('input',()=>{state.preferredTarget=null;setActivePreset(null);}));
 $('upload-file').addEventListener('change',()=>{state.preferredTarget=null;setActivePreset(null);});
