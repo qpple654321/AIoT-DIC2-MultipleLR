@@ -87,8 +87,11 @@
   function makeGenericDataset(parsed,target){
     if(!parsed.columns.includes(target))throw Error('請選擇 CSV 中存在的目標欄位');
     const desc=inferColumns(parsed);const chosen=[];
+    // Global_Sales is approximately the sum of four regional sales fields.
+    // Never include those components as predictors for the sales demo.
+    const leakColumns=target.toLowerCase()==='global_sales'?new Set(['na_sales','eu_sales','jp_sales','other_sales']):new Set();
     for(const d of desc){
-      if(d.name===target || /^(id|index|name|title|url|url_.*|.*_id)$/i.test(d.name))continue;
+      if(d.name===target || leakColumns.has(d.name.toLowerCase()) || /^(id|index|name|title|url|url_.*|.*_id)$/i.test(d.name))continue;
       if(d.type==='numeric')chosen.push({column:d.name,type:'numeric'});
       else if(d.unique>=2 && d.unique<=8 && d.filled>=Math.min(parsed.rows.length,10)) {
         const vs=[...new Set(parsed.rows.map(r=>String(r[d.name]??'').trim()).filter(Boolean))].sort().slice(1);
