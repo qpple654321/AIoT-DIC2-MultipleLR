@@ -30,6 +30,32 @@
       <div class="hero-tags"><span>OLS Regression</span><span>RFE Feature Selection</span><span>95% Prediction Interval</span><span>CRISP-DM</span></div>
     </section>
 
+    <section class="preset-launch" aria-label="常用資料集快速套用">
+      <div class="preset-launch-head">
+        <div><div class="section-kicker">QUICK START / DATASETS</div><h2>一鍵套用公開資料集</h2><p>選擇範例即可自動載入 CSV、設定預測目標並開始訓練。也可在下方工作台貼上任意 CSV 網址。</p></div>
+        <span class="preset-launch-label">LIVE MODEL TRAINING</span>
+      </div>
+      <div class="preset-grid" role="group" aria-label="快速資料集選擇">
+        <button type="button" class="preset-card" data-preset="steam-price" aria-pressed="false">
+          <span class="preset-top"><span class="preset-no">01</span><span class="preset-chip">作業主題</span></span>
+          <strong>Steam 遊戲價格</strong><small>15 個原始特徵 · Target: price</small><span class="preset-cta">套用並訓練 ↗</span>
+        </button>
+        <button type="button" class="preset-card" data-preset="steam-playtime" aria-pressed="false">
+          <span class="preset-top"><span class="preset-no">02</span><span class="preset-chip">作業主題</span></span>
+          <strong>Steam 遊玩時間</strong><small>14 個原始特徵 · Target: average_playtime</small><span class="preset-cta">套用並訓練 ↗</span>
+        </button>
+        <button type="button" class="preset-card" data-preset="game-sales" aria-pressed="false">
+          <span class="preset-top"><span class="preset-no">03</span><span class="preset-chip preset-chip-muted">延伸資料</span></span>
+          <strong>全球遊戲銷量</strong><small>Video Game Sales · Target: Global_Sales</small><span class="preset-cta">套用並訓練 ↗</span>
+        </button>
+        <button type="button" class="preset-card" data-preset="startups" aria-pressed="false">
+          <span class="preset-top"><span class="preset-no">04</span><span class="preset-chip preset-chip-muted">老師範例</span></span>
+          <strong>50 Startups</strong><small>任意 CSV 示範 · Target: Profit</small><span class="preset-cta">套用並訓練 ↗</span>
+        </button>
+      </div>
+      <p class="preset-footnote">主作業符合特徵數要求的是前兩項。第三、四項為自訂 Dataset 功能展示，僅用於額外比較。</p>
+    </section>
+
     <section class="workbench" aria-label="資料分析工作台">
       <aside class="panel controls-panel">
         <div class="panel-heading"><div><div class="section-kicker">WORKSPACE</div><h2>分析工作台</h2></div><span class="index-tag">01 / 04</span></div>
@@ -49,7 +75,7 @@
         <div id="custom-settings" hidden>
           <label for="custom-url" class="field-title">自訂 CSV 連結 <span class="point-label">+2 加分</span></label>
           <input id="custom-url" class="field" type="url" value="https://raw.githubusercontent.com/Avik-Jain/100-Days-Of-ML-Code/master/datasets/50_Startups.csv" placeholder="https://raw.githubusercontent.com/.../data.csv" spellcheck="false">
-          <p class="help">可貼上公開 CSV 網址，或上傳 CSV。遠端伺服器需支援 CORS。</p>
+          <p class="help">可自由貼上任何可公開存取的 CSV 網址，或上傳本機 CSV；遠端來源需允許跨網域存取（CORS）。</p>
           <label for="target-select" class="field-title">預測目標（Target）</label>
           <select id="target-select" class="field" disabled><option value="">請先載入 CSV</option></select>
           <p id="custom-warning" class="help warning-text" hidden></p>
