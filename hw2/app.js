@@ -94,7 +94,7 @@ function renderPredictFields(r){state.userFeatures={};const fields=r.model.featu
  container.querySelectorAll('input').forEach(input=>input.addEventListener('change',()=>{const v=Number(input.value);if(Number.isFinite(v))state.userFeatures[input.dataset.feature]=v;}));runPrediction();}
 function runPrediction(){if(!state.result)return;const r=state.result;
  $('predict-fields').querySelectorAll('input').forEach(input=>{const v=Number(input.value);if(Number.isFinite(v)&&input.value.trim()!=='')state.userFeatures[input.dataset.feature]=v;});
- const y=C.predictModel(r.model,state.userFeatures),lo=Math.max(0,y-r.q),hi=y+r.q;
+ const y=C.predictModel(r.model,state.userFeatures),lo=r.problem==='custom'?y-r.q:Math.max(0,y-r.q),hi=y+r.q;
  $('predict-value').textContent=fmt(y,2);$('predict-unit').textContent=r.unit;$('predict-range').textContent=`${fmt(lo,2)} — ${fmt(hi,2)} ${r.unit}`;
  $('predict-note').textContent=`此區間使用校準集求得的 ±${fmt(r.q,2)} ${r.unit}；統計上的邊際覆蓋率目標為 95%，不表示單筆預測有 95% 機率正確。`;}
 function resetFeatures(){if(!state.result)return;renderPredictFields(state.result);}
