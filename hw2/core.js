@@ -152,12 +152,12 @@
     }
     for(let j=0;j<d;j++){for(let k=0;k<j;k++)A[k][j]=A[j][k];A[j][j]+=alpha*n+1e-7;}
     const coefficients=solve(A,b);
-    return {features:selected,means,scales,coefficients,intercept:ym,alpha,targetTransform};
+    return {features:selected,means,scales,coefficients,intercept:ym,alpha,targetTransform,nonnegative:dataset.problem!=='custom'};
   }
   function predictModel(model,x){
     let z=model.intercept;model.features.forEach((f,j)=>z+=model.coefficients[j]*(x[f]-model.means[j])/model.scales[j]);
     const y=model.targetTransform==='log1p'?Math.expm1(Math.min(20,z)):z;
-    return Number.isFinite(y)?Math.max(0,y):NaN;
+    return Number.isFinite(y)?(model.nonnegative?Math.max(0,y):y):NaN;
   }
   function evaluate(dataset,indices,model){
     const real=indices.map(i=>dataset.entries[i].y),pred=indices.map(i=>predictModel(model,dataset.entries[i].x));
@@ -203,7 +203,7 @@
     const best=models[0],test=evaluate(dataset,parts.test,best.model), q=conformal(best.model,dataset,parts.calibration);
     const coverage=test.pred.filter((x,i)=>Math.abs(test.real[i]-x)<=q).length/test.n;
     const coeff=best.model.features.map((f,i)=>({feature:f,coefficient:best.model.coefficients[i],importance:Math.abs(best.model.coefficients[i])})).sort((a,b)=>b.importance-a.importance);
-    const subset=shuffledIndex(test.n,13).slice(0,Math.min(420,test.n)).map(i=>({actual:test.real[i],predicted:test.pred[i],lo:Math.max(0,test.pred[i]-q),hi:test.pred[i]+q,residual:test.real[i]-test.pred[i]}));
+    const subset=shuffledIndex(test.n,13).slice(0,Math.min(420,test.n)).map(i=>({actual:test.real[i],predicted:test.pred[i],lo:dataset.problem==='custom'?test.pred[i]-q:Math.max(0,test.pred[i]-q),hi:test.pred[i]+q,residual:test.real[i]-test.pred[i]}));
     const summary={
       label:dataset.label,problem:dataset.problem,target:dataset.target,unit:dataset.unit,source:dataset.source,
       kaggle:dataset.kaggle,originalRows:dataset.originalRows,validRows:dataset.entries.length,
