@@ -1,7 +1,9 @@
 /* Steam Insights — browser-side analysis & SVG presentation; no data leaves the browser. */
 (()=>{'use strict';
 const $=id=>document.getElementById(id), C=window.HW2Core;
-const state={parsed:null,dataset:null,result:null,mode:'price',filename:null,userFeatures:{},preferredTarget:null};
+const state={parsed:null,dataset:null,result:null,mode:'price',filename:null,userFeatures:{},preferredTarget:null,loadSeq:0,userInteracted:false};
+let autoStartTimer=null;
+function userAction(){state.userInteracted=true;if(autoStartTimer!==null){clearTimeout(autoStartTimer);autoStartTimer=null;}}
 const PRESETS={
  'steam-price':{mode:'price',url:C.STEAM_URL,target:'price'},
  'steam-playtime':{mode:'playtime',url:C.STEAM_URL,target:'average_playtime'},
@@ -17,14 +19,14 @@ function setActivePreset(value){
 }
 async function usePreset(name){
  const preset=PRESETS[name];if(!preset)return;
+ userAction();
  $('problem-select').value=preset.mode;
  showProblem();
  state.preferredTarget=preset.target;
  if(preset.mode==='custom')$('custom-url').value=preset.url;
  else $('steam-url').value=preset.url;
  setActivePreset(name);
- await loadData();
- if(state.dataset)await train();
+ if(await loadData())await train();
 }
 
 const comma=n=>Number(n).toLocaleString('en-US');
@@ -32,7 +34,7 @@ const fmt=(n,d=3)=>!Number.isFinite(Number(n))?'—':Number(n).toLocaleString('e
 const short=n=>!Number.isFinite(n)?'—':Math.abs(n)>=1000000?`${(n/1000000).toFixed(1)}m`:Math.abs(n)>=10000?`${(n/1000).toFixed(1)}k`:Math.abs(n)>=100?Math.round(n).toLocaleString():Math.abs(n)>=1?n.toFixed(2):n.toFixed(3);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function status(msg,mode='idle'){ $('status-text').textContent=msg; $('status-dot').parentNode.className='status '+mode;}
-function showProblem(){state.mode=$('problem-select').value;state.parsed=null;state.dataset=null;state.result=null;state.filename=null;state.preferredTarget=null;setActivePreset(null);
+function showProblem(){state.loadSeq++;state.mode=$('problem-select').value;state.parsed=null;state.dataset=null;state.result=null;state.filename=null;state.preferredTarget=null;setActivePreset(null);
  $('steam-settings').hidden=state.mode==='custom';$('custom-settings').hidden=state.mode!=='custom';$('data-info').hidden=true;$('train-btn').disabled=true;$('upload-file').value='';hideResults();
  const p=state.mode==='price',c=state.mode==='custom';
  $('problem-title').innerHTML=c?'用你的資料，<br>建立自己的預測模型。':p?'一款遊戲的售價，<br>能從哪些條件推測？':'玩家會玩多久，<br>哪些遊戲特徵有關？';
@@ -40,6 +42,7 @@ function showProblem(){state.mode=$('problem-select').value;state.parsed=null;st
  status('尚未載入資料集');}
 function hideResults(){ $('empty-results').hidden=false;$('results-content').hidden=true;$('predict-empty').hidden=false;$('predict-content').hidden=true;['metric-r2','metric-rmse','metric-coverage'].forEach(k=>$(k).textContent='—');}
 async function loadData(){
+ const seq=++state.loadSeq;
  try{
   const mode=state.mode,file=$('upload-file').files[0];let content,url;
   state.parsed=null;state.dataset=null;state.result=null;$('data-info').hidden=true;hideResults();
@@ -50,6 +53,7 @@ async function loadData(){
    try{resp=await fetch(url,{signal:timeout.signal,cache:'default'});}catch(err){throw Error(`無法從網址載入 CSV（${err.name==='AbortError'?'連線逾時':'來源可能限制跨網域 CORS'}）。請改用本機 CSV 上傳。`);}finally{clearTimeout(tid);}
    if(!resp.ok)throw Error(`下載失敗：HTTP ${resp.status}；請確認 URL 指向原始 CSV`);content=await resp.text();if(content.length>35e6)throw Error('遠端 CSV 過大，請使用 30 MB 以下檔案');
   }
+  if(seq!==state.loadSeq)return false;
   const parsed=C.parseCSV(content);state.parsed=parsed;state.filename=url;
   if(mode==='custom'){
    const cols=C.inferColumns(parsed).filter(x=>x.type==='numeric');const select=$('target-select');select.innerHTML='<option value="">請選擇數值預測目標</option>'+cols.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');select.disabled=false;
@@ -59,7 +63,8 @@ async function loadData(){
   }
   setDataset();
   if(mode==='custom'&&!$('target-select').value)status(`已載入 ${comma(parsed.rows.length)} 筆，請先選擇目標欄位`,'ok');else status(`已載入 ${comma(parsed.rows.length)} 筆真實資料，可以開始訓練`,'ok');
- }catch(err){status(err.message,'error');console.error(err);}finally{$('load-btn').disabled=false;}
+  return Boolean(state.dataset);
+ }catch(err){if(seq===state.loadSeq){status(err.message,'error');console.error(err);}return false;}finally{if(seq===state.loadSeq)$('load-btn').disabled=false;}
 }
 function setDataset(){if(!state.parsed)return;try{
  state.dataset=state.mode==='custom'?($('target-select').value?C.makeGenericDataset(state.parsed,$('target-select').value):null):C.makeSteamDataset(state.parsed,state.mode);
@@ -128,9 +133,9 @@ function exportResults(){if(!state.result)return;const result=state.result;const
 document.querySelectorAll('[data-preset]').forEach(button=>button.addEventListener('click',()=>usePreset(button.dataset.preset)));
 ['steam-url','custom-url'].forEach(id=>$(id).addEventListener('input',()=>{state.preferredTarget=null;setActivePreset(null);}));
 $('upload-file').addEventListener('change',()=>{state.preferredTarget=null;setActivePreset(null);});
-$('problem-select').addEventListener('change',showProblem);$('target-select').addEventListener('change',()=>{setDataset();if(state.dataset)status('目標欄位已設定，可以開始訓練','ok');});$('load-btn').addEventListener('click',loadData);$('train-btn').addEventListener('click',train);$('predict-btn').addEventListener('click',runPrediction);$('reset-features').addEventListener('click',resetFeatures);$('export-btn').addEventListener('click',exportResults);
+$('problem-select').addEventListener('change',()=>{userAction();showProblem();});$('target-select').addEventListener('change',()=>{setDataset();if(state.dataset)status('目標欄位已設定，可以開始訓練','ok');});$('load-btn').addEventListener('click',loadData);$('train-btn').addEventListener('click',train);$('predict-btn').addEventListener('click',runPrediction);$('reset-features').addEventListener('click',resetFeatures);$('export-btn').addEventListener('click',exportResults);
 window.addEventListener('error',e=>console.error('HW2 site error',e.message));
 showProblem();
 // Auto-load primary Kaggle source. If remote CORS/network fails, local upload remains available.
-setTimeout(async()=>{await loadData();if(state.dataset&&state.mode==='price')await train();},200);
+autoStartTimer=setTimeout(async()=>{autoStartTimer=null;if(state.userInteracted)return;setActivePreset('steam-price');if(await loadData())await train();},200);
 })();
