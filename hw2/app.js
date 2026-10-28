@@ -1,13 +1,38 @@
 /* Steam Insights — browser-side analysis & SVG presentation; no data leaves the browser. */
 (()=>{'use strict';
 const $=id=>document.getElementById(id), C=window.HW2Core;
-const state={parsed:null,dataset:null,result:null,mode:'price',filename:null,userFeatures:{}};
+const state={parsed:null,dataset:null,result:null,mode:'price',filename:null,userFeatures:{},preferredTarget:null};
+const PRESETS={
+ 'steam-price':{mode:'price',url:C.STEAM_URL,target:'price'},
+ 'steam-playtime':{mode:'playtime',url:C.STEAM_URL,target:'average_playtime'},
+ 'game-sales':{mode:'custom',url:'https://raw.githubusercontent.com/stephenbeese/Video-Game-Sales-Analysis/main/data/raw/video_game_sales.csv',target:'Global_Sales'},
+ 'startups':{mode:'custom',url:C.STARTUPS_URL,target:'Profit'}
+};
+function setActivePreset(value){
+ document.querySelectorAll('[data-preset]').forEach(button=>{
+  const active=button.dataset.preset===value;
+  button.classList.toggle('is-active',active);
+  button.setAttribute('aria-pressed',String(active));
+ });
+}
+async function usePreset(name){
+ const preset=PRESETS[name];if(!preset)return;
+ $('problem-select').value=preset.mode;
+ showProblem();
+ state.preferredTarget=preset.target;
+ if(preset.mode==='custom')$('custom-url').value=preset.url;
+ else $('steam-url').value=preset.url;
+ setActivePreset(name);
+ await loadData();
+ if(state.dataset)await train();
+}
+
 const comma=n=>Number(n).toLocaleString('en-US');
 const fmt=(n,d=3)=>!Number.isFinite(Number(n))?'—':Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
 const short=n=>!Number.isFinite(n)?'—':Math.abs(n)>=1000000?`${(n/1000000).toFixed(1)}m`:Math.abs(n)>=10000?`${(n/1000).toFixed(1)}k`:Math.abs(n)>=100?Math.round(n).toLocaleString():Math.abs(n)>=1?n.toFixed(2):n.toFixed(3);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function status(msg,mode='idle'){ $('status-text').textContent=msg; $('status-dot').parentNode.className='status '+mode;}
-function showProblem(){state.mode=$('problem-select').value;state.parsed=null;state.dataset=null;state.result=null;state.filename=null;
+function showProblem(){state.mode=$('problem-select').value;state.parsed=null;state.dataset=null;state.result=null;state.filename=null;state.preferredTarget=null;setActivePreset(null);
  $('steam-settings').hidden=state.mode==='custom';$('custom-settings').hidden=state.mode!=='custom';$('data-info').hidden=true;$('train-btn').disabled=true;$('upload-file').value='';hideResults();
  const p=state.mode==='price',c=state.mode==='custom';
  $('problem-title').innerHTML=c?'用你的資料，<br>建立自己的預測模型。':p?'一款遊戲的售價，<br>能從哪些條件推測？':'玩家會玩多久，<br>哪些遊戲特徵有關？';
@@ -17,6 +42,7 @@ function hideResults(){ $('empty-results').hidden=false;$('results-content').hid
 async function loadData(){
  try{
   const mode=state.mode,file=$('upload-file').files[0];let content,url;
+  state.parsed=null;state.dataset=null;state.result=null;$('data-info').hidden=true;hideResults();
   $('load-btn').disabled=true;$('train-btn').disabled=true;status('正在載入 CSV 資料…','busy');await new Promise(r=>setTimeout(r,32));
   if(file){if(file.size>30e6)throw Error('目前瀏覽器示範限制 CSV 檔案 30 MB 以下');content=await file.text();url=`本機上傳：${file.name}`;}
   else {url=mode==='custom'?$('custom-url').value.trim():$('steam-url').value.trim();if(!/^https?:\/\//i.test(url))throw Error('請輸入有效的 http(s) CSV URL，或上傳 CSV 檔案');
@@ -27,7 +53,7 @@ async function loadData(){
   const parsed=C.parseCSV(content);state.parsed=parsed;state.filename=url;
   if(mode==='custom'){
    const cols=C.inferColumns(parsed).filter(x=>x.type==='numeric');const select=$('target-select');select.innerHTML='<option value="">請選擇數值預測目標</option>'+cols.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');select.disabled=false;
-   const preferred=['Profit','profit','SalePrice','price','sales','target','y'].find(v=>cols.some(c=>c.name===v));select.value=preferred||'';
+   const preferred=[state.preferredTarget,'Global_Sales','Profit','profit','SalePrice','price','sales','target','y'].find(v=>v&&cols.some(c=>c.name===v));select.value=preferred||'';
    if(!select.value&&cols.length===1)select.value=cols[0].name;
    if(!cols.length)throw Error('找不到連續數值的 Target 欄位，無法執行回歸');
   }
@@ -99,6 +125,9 @@ function runPrediction(){if(!state.result)return;const r=state.result;
  $('predict-note').textContent=`此區間使用校準集求得的 ±${fmt(r.q,2)} ${r.unit}；統計上的邊際覆蓋率目標為 95%，不表示單筆預測有 95% 機率正確。`;}
 function resetFeatures(){if(!state.result)return;renderPredictFields(state.result);}
 function exportResults(){if(!state.result)return;const result=state.result;const copy={...result,model:{...result.model},scatter:result.scatter};const blob=new Blob([JSON.stringify(copy,null,2)],{type:'application/json;charset=utf-8'}),href=URL.createObjectURL(blob),a=document.createElement('a');a.href=href;a.download=`steam_hw2_${result.problem}_results.json`;a.click();setTimeout(()=>URL.revokeObjectURL(href),1000);}
+document.querySelectorAll('[data-preset]').forEach(button=>button.addEventListener('click',()=>usePreset(button.dataset.preset)));
+['steam-url','custom-url'].forEach(id=>$(id).addEventListener('input',()=>{state.preferredTarget=null;setActivePreset(null);}));
+$('upload-file').addEventListener('change',()=>{state.preferredTarget=null;setActivePreset(null);});
 $('problem-select').addEventListener('change',showProblem);$('target-select').addEventListener('change',()=>{setDataset();if(state.dataset)status('目標欄位已設定，可以開始訓練','ok');});$('load-btn').addEventListener('click',loadData);$('train-btn').addEventListener('click',train);$('predict-btn').addEventListener('click',runPrediction);$('reset-features').addEventListener('click',resetFeatures);$('export-btn').addEventListener('click',exportResults);
 window.addEventListener('error',e=>console.error('HW2 site error',e.message));
 showProblem();
