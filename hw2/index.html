@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <meta name="description" content="NCHU 資料探勘 HW2｜Steam 遊戲價格與遊玩時間多元線性回歸，RFE 特徵選擇、評估、95% 預測區間及自訂 CSV">
+  <title>Steam Insights | Multiple Linear Regression · NCHU HW2</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="core.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a href="#overview" class="brand" aria-label="Steam Insights 首頁"><span class="brand-mark">S<span class="brand-dot">.</span></span><span>Steam<span class="brand-strong">Insights</span></span></a>
+      <nav class="desktop-nav" aria-label="頁面導覽">
+        <a href="#overview">總覽</a><a href="#results">分析結果</a><a href="#predict">即時預測</a><a href="#crisp">CRISP-DM</a><a href="#references">資料來源</a>
+      </nav>
+      <a class="github-link" target="_blank" rel="noreferrer" href="https://github.com/qpple654321/AIoT-DIC2-MultipleLR/tree/main/hw2">GitHub <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main class="shell" id="overview">
+    <section class="hero">
+      <div class="eyebrow"><span class="pulse"></span> NCHU · DATA MINING HOMEWORK 02</div>
+      <h1>從遊戲數據，<br><span class="gradient-text">看見價格背後的規律。</span></h1>
+      <p class="hero-sub">Steam Game Analytics · Multiple Linear Regression</p>
+      <p class="hero-desc">使用公開 Steam 遊戲資料，從特徵選擇、線性回歸到預測區間，以可重現的資料科學流程探索遊戲市場。</p>
+      <div class="hero-tags"><span>OLS Regression</span><span>RFE Feature Selection</span><span>95% Prediction Interval</span><span>CRISP-DM</span></div>
+    </section>
+
+    <section class="workbench" aria-label="資料分析工作台">
+      <aside class="panel controls-panel">
+        <div class="panel-heading"><div><div class="section-kicker">WORKSPACE</div><h2>分析工作台</h2></div><span class="index-tag">01 / 04</span></div>
+        <label for="problem-select" class="field-title">預測題目 <span class="point-label">+1 加分</span></label>
+        <select id="problem-select" class="field">
+          <option value="price">Problem 01 · Steam 遊戲價格</option>
+          <option value="playtime">Problem 02 · Steam 平均遊玩時間</option>
+          <option value="custom">自訂資料集 · CSV URL / 上傳</option>
+        </select>
+        <p class="help">切換不同的回歸問題；各問題獨立訓練與評估。</p>
+        <div class="separator"></div>
+        <div id="steam-settings">
+          <div class="label-row"><label for="steam-url" class="field-title">Steam 資料來源</label><span class="mini-tag">Kaggle / GitHub</span></div>
+          <input id="steam-url" class="field" type="url" spellcheck="false" value="https://raw.githubusercontent.com/yilinpotato/BigData-App/main/dataset/steam.csv" aria-describedby="steam-help">
+          <p id="steam-help" class="help">原始資料來自 Kaggle，GitHub 提供 CSV 鏡像。亦可使用下方本機檔案。</p>
+        </div>
+        <div id="custom-settings" hidden>
+          <label for="custom-url" class="field-title">自訂 CSV 連結 <span class="point-label">+2 加分</span></label>
+          <input id="custom-url" class="field" type="url" value="https://raw.githubusercontent.com/Avik-Jain/100-Days-Of-ML-Code/master/datasets/50_Startups.csv" placeholder="https://raw.githubusercontent.com/.../data.csv" spellcheck="false">
+          <p class="help">可貼上公開 CSV 網址，或上傳 CSV。遠端伺服器需支援 CORS。</p>
+          <label for="target-select" class="field-title">預測目標（Target）</label>
+          <select id="target-select" class="field" disabled><option value="">請先載入 CSV</option></select>
+          <p id="custom-warning" class="help warning-text" hidden></p>
+        </div>
+        <label class="field-title" for="upload-file">或選擇本機 CSV 檔案</label>
+        <input class="file-input" id="upload-file" type="file" accept=".csv,text/csv" aria-label="上傳 CSV 檔案">
+        <div class="actions"><button id="load-btn" class="button button-secondary" type="button">載入資料集</button><button id="train-btn" class="button button-primary" type="button" disabled>開始訓練 <span aria-hidden="true">↗</span></button></div>
+        <div class="status" role="status" aria-live="polite"><span id="status-dot" class="status-dot"></span><span id="status-text">尚未載入資料集</span></div>
+        <div class="data-info" id="data-info" hidden><div><span>資料列數</span><b id="data-rows">—</b></div><div><span>原始輸入特徵</span><b id="data-features">—</b></div><div><span>預測目標</span><b id="data-target">—</b></div><div><span>目標平均值</span><b id="data-mean">—</b></div><div><span>有缺失的欄位</span><b id="data-missing">—</b></div></div>
+      </aside>
+
+      <div class="analysis-intro">
+        <div class="intro-card panel">
+          <div class="intro-head"><div class="section-kicker">RESEARCH QUESTION</div><span class="circle-icon" aria-hidden="true">↗</span></div>
+          <h2 id="problem-title">一款遊戲的售價，<br>能從哪些條件推測？</h2>
+          <p id="problem-desc">透過發行時間、遊戲類型、平台、成就及玩家行為等資訊，以多元線性回歸預測 Steam 遊戲價格。</p>
+          <div class="info-grid"><div><span>原始資料規模</span><strong>27,075</strong><small>款遊戲，歷史資料</small></div><div><span>研究方法</span><strong>OLS + RFE</strong><small>訓練集特徵選擇</small></div><div><span>資料年份</span><strong>~2019</strong><small>非即時商店售價</small></div></div>
+        </div>
+        <div class="metric-grid" id="metrics" aria-label="模型核心指標">
+          <div class="panel metric"><div class="metric-label">測試集 R² <span>↗</span></div><strong id="metric-r2">—</strong><p>模型對目標變異的解釋能力</p></div>
+          <div class="panel metric"><div class="metric-label">測試集 RMSE <span>↗</span></div><strong id="metric-rmse">—</strong><p id="rmse-unit">誤差與目標相同單位</p></div>
+          <div class="panel metric"><div class="metric-label">95% 區間覆蓋率 <span>↗</span></div><strong id="metric-coverage">—</strong><p>測試資料落在預測區間內的比例</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="results">
+      <div class="section-header"><div><div class="section-kicker">MODEL PERFORMANCE</div><h2>模型分析結果</h2><p>訓練與測試使用不同資料；所有圖表均根據實際資料計算，不預填假成績。</p></div><span class="index-tag">02 / 04</span></div>
+      <div id="empty-results" class="panel empty"><div class="empty-art"><span>↗</span><span>〰</span><span>●</span></div><h3>載入資料，開始你的回歸分析</h3><p>載入 Steam 或自訂 CSV，按下「開始訓練」，系統便會產生真實的模型比較與預測圖表。</p></div>
+      <div id="results-content" hidden>
+        <div id="result-alert" class="alert" hidden></div>
+        <div class="chart-grid">
+          <article class="panel chart-panel"><div class="chart-heading"><div><span class="chart-kicker">EVALUATION / 01</span><h3>實際值 vs. 預測值</h3></div><span class="chart-note">Test set</span></div><div id="scatter-chart" class="chart" role="img" aria-label="實際值與預測值散佈圖"></div><p class="chart-caption">越靠近虛線，代表預測越準確；顯示固定隨機種子抽樣。</p></article>
+          <article class="panel chart-panel"><div class="chart-heading"><div><span class="chart-kicker">FEATURE SELECTION / 02</span><h3>特徵數量與模型表現</h3></div><span class="chart-note">Validation R²</span></div><div id="selection-chart" class="chart" role="img" aria-label="不同特徵數量之驗證 R 平方圖"></div><p class="chart-caption">使用訓練資料執行 RFE，以驗證集 RMSE 選擇模型。</p></article>
+          <article class="panel chart-panel"><div class="chart-heading"><div><span class="chart-kicker">UNCERTAINTY / 03</span><h3>95% 預測區間</h3></div><span class="chart-note">Split conformal</span></div><div id="interval-chart" class="chart" role="img" aria-label="95% 預測區間圖"></div><p class="chart-caption">使用獨立校準集估計區間半寬；實測覆蓋率不必恰為 95%。</p></article>
+          <article class="panel chart-panel"><div class="chart-heading"><div><span class="chart-kicker">DIAGNOSTICS / 04</span><h3>殘差分布</h3></div><span class="chart-note">Residuals</span></div><div id="residual-chart" class="chart" role="img" aria-label="預測值和殘差散佈圖"></div><p class="chart-caption">觀察預測偏差、非線性與異質變異，不宣稱通過所有模型假設。</p></article>
+        </div>
+        <div class="panel table-panel"><div class="chart-heading"><div><span class="chart-kicker">EXPERIMENTS</span><h3>回歸模型與特徵選擇比較</h3></div><button class="button button-outline button-small" id="export-btn">下載分析結果 JSON ↓</button></div><div class="table-wrap"><table><thead><tr><th>模型</th><th>特徵數</th><th>MAE</th><th>MSE</th><th>RMSE</th><th>R²</th><th>Adj. R²</th></tr></thead><tbody id="compare-body"></tbody></table></div><p class="chart-caption" id="model-explain"></p></div>
+        <div class="panel feature-panel"><div class="chart-heading"><div><span class="chart-kicker">INTERPRETABILITY</span><h3>主要特徵與係數</h3></div><span class="chart-note">標準化係數的絕對值</span></div><div id="feature-bars"></div><p class="chart-caption">顯示模型中的關聯程度，不等於因果效應。衍生特徵與原始欄位數請分開解讀。</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="predict">
+      <div class="section-header"><div><div class="section-kicker">DEPLOYMENT</div><h2>即時預測實驗室</h2><p>使用剛才訓練的最佳線性模型，調整特徵並產生預測值與預測區間。</p></div><span class="index-tag">03 / 04</span></div>
+      <div class="panel predict-card" id="predict-empty"><div class="empty-inline">尚未訓練模型。完成上方分析後，即可調整特徵產生即時預測。</div></div>
+      <div class="predict-grid" id="predict-content" hidden><div class="panel"><div class="chart-heading"><div><span class="chart-kicker">YOUR SCENARIO</span><h3>特徵設定</h3></div><button id="reset-features" class="text-button">重設</button></div><p class="help">預設採用訓練集各欄位的中位數。請依需要修改後預測。</p><div id="predict-fields" class="predict-fields"></div><button id="predict-btn" class="button button-primary full-btn">計算預測結果 →</button></div><div class="panel prediction-output"><span class="chart-kicker">MODEL OUTPUT</span><p>模型預測值</p><strong id="predict-value">—</strong><span class="prediction-unit" id="predict-unit"></span><div class="interval-display"><span>95% 預測區間</span><b id="predict-range">—</b></div><p class="chart-caption" id="predict-note">本工具僅用於示範歷史資料上的統計預測，非即時售價建議。</p></div></div>
+    </section>
+
+    <section class="section" id="crisp"><div class="section-header"><div><div class="section-kicker">METHODOLOGY</div><h2>CRISP-DM 六大流程</h2><p>從研究問題到實際應用，完整記錄每個步驟與方法限制。</p></div><span class="index-tag">04 / 04</span></div><div class="crisp-grid">
+      <article class="panel crisp-item"><span class="step-num">01</span><h3>Business Understanding</h3><p>利用遊戲發行與市場資訊預測售價或遊玩時間，協助探索遊戲產品特徵與市場結果的關聯。</p></article>
+      <article class="panel crisp-item"><span class="step-num">02</span><h3>Data Understanding</h3><p>檢查欄位、目標類型、缺失值與資料分布；確認歷史 Steam Store Games 原始欄位與資料來源。</p></article>
+      <article class="panel crisp-item"><span class="step-num">03</span><h3>Data Preparation</h3><p>將多值類別欄位轉換為數值與指示變數；固定 seed 42，切分訓練 60%、驗證 20%、校準 10%、測試 10%。</p></article>
+      <article class="panel crisp-item"><span class="step-num">04</span><h3>Modeling</h3><p>以最小平方法 OLS 訓練多元線性回歸，RFE 反覆移除特徵；以 Ridge 作基準比較。訓練資料才用於選特徵。</p></article>
+      <article class="panel crisp-item"><span class="step-num">05</span><h3>Evaluation</h3><p>驗證集挑選模型，獨立測試集報告 MAE、MSE、RMSE、R²、Adjusted R²；使用 split conformal 建立 95% 預測區間。</p></article>
+      <article class="panel crisp-item"><span class="step-num">06</span><h3>Deployment</h3><p>在 GitHub Pages 網站中支援資料集選擇、CSV 載入、模型分析、互動式預測及評估 JSON 匯出。</p></article>
+    </div></section>
+    <section class="references section" id="references"><div class="section-header"><div><div class="section-kicker">TRANSPARENCY</div><h2>資料來源與研究備註</h2></div></div><div class="panel references-panel"><p><b>原始 Kaggle 資料集：</b><a target="_blank" rel="noreferrer" href="https://www.kaggle.com/datasets/nikdavis/steam-store-games">Steam Store Games — nikdavis ↗</a></p><p><b>GitHub CSV 鏡像：</b><a target="_blank" rel="noreferrer" href="https://github.com/yilinpotato/BigData-App/blob/main/dataset/steam.csv">yilinpotato/BigData-App/dataset/steam.csv ↗</a></p><p><b>自訂資料示範：</b><a target="_blank" rel="noreferrer" href="https://github.com/Avik-Jain/100-Days-Of-ML-Code/blob/master/datasets/50_Startups.csv">50_Startups.csv ↗</a></p><p><b>方法限制：</b> Steam 為歷史橫斷面資料，平台、評價與玩家數量是關聯指標，不能推論因果，也不代表遊戲上架前即可取得。現場執行產生評估指標；模型只保留於目前瀏覽器工作階段。</p><p><b>GPT 輔助內容：</b> 系統架構、瀏覽器回歸引擎與資料視覺化由 ChatGPT 協助設計與實作。NotebookLM 摘要需實際使用該工具後才可加入，不虛構研究過程。</p></div></section>
+  </main>
+  <footer class="footer"><div class="shell footer-inner"><div>Steam<span class="brand-strong">Insights</span> <span class="footer-divider">/</span> NCHU HW2 · Multiple Linear Regression</div><a href="#overview">回到頂部 ↑</a></div></footer>
+</body>
+</html>
