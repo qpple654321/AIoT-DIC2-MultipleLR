@@ -7,9 +7,9 @@
   <meta name="description" content="NCHU 資料探勘 HW2｜Steam 遊戲價格與遊玩時間多元線性回歸，RFE 特徵選擇、評估、95% 預測區間及自訂 CSV">
   <title>Steam Insights | Multiple Linear Regression · NCHU HW2</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="steam-theme.css">
-  <script src="core.js" defer></script>
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="steam-theme.css?v=20261028-2">
+  <script src="core.js?v=20261028-2" defer></script>
+  <script src="app.js?v=20261028-2" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -33,7 +33,7 @@
     <section class="preset-launch" aria-label="常用資料集快速套用">
       <div class="preset-launch-head">
         <div><div class="section-kicker">QUICK START / DATASETS</div><h2>一鍵套用公開資料集</h2><p>選擇範例即可自動載入 CSV、設定預測目標並開始訓練。也可在下方工作台貼上任意 CSV 網址。</p></div>
-        <span class="preset-launch-label">LIVE MODEL TRAINING</span>
+        <button type="button" class="preset-custom-link" id="open-custom-data">＋ 自訂 CSV 網址 <span class="point-label">+2 加分</span></button>
       </div>
       <div class="preset-grid" role="group" aria-label="快速資料集選擇">
         <button type="button" class="preset-card" data-preset="steam-price" aria-pressed="false">
