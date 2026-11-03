@@ -140,7 +140,7 @@ function renderDiagnostics(r){
  const w=di.worst;
  summary+='<p><b>測試集最大絕對誤差</b>：'+esc(w.name)+'，真實值 '+fmt(w.actual,2)+'，預測值 '+fmt(w.predicted,2)+'，絕對誤差 '+fmt(w.error,2)+' '+esc(r.unit)+'。此分析僅供最終診斷，沒有拿 Test 來調參。</p>';
  const bandRows=di.bands.map(g=>'<tr><td>'+esc(g.label)+'</td><td>'+comma(g.n)+'</td><td>'+fmt(g.MAE,2)+'</td><td>'+fmt(g.RMSE,2)+'</td></tr>').join('');
- host.innerHTML=summary+'<div class="table-wrap"><table><thead><tr><th>真實值區間（Test）</th><th>筆數</th><th>MAE</th><th>RMSE</th></tr></thead><tbody>'+bandRows+'</tbody></table></div>'+
+ host.innerHTML=summary+(di.bands.length?'<div class="table-wrap"><table><thead><tr><th>真實值區間（Test）</th><th>筆數</th><th>MAE</th><th>RMSE</th></tr></thead><tbody>'+bandRows+'</tbody></table></div>':'<p>自訂 CSV 的目標單位由使用者決定，因此不套用 Steam 專用的價格／分鐘級距。</p>')+
  '<p class="chart-caption">Test 的區間誤差是完成模型選擇後的診斷；0 筆的區間不計分。不同群組樣本數不同，不應只比較誤差大小就推論因果。</p>';
 }
 function renderIntervals(r){const pts=[...r.scatter].sort((a,b)=>a.actual-b.actual).filter((_,i)=>i%Math.max(1,Math.floor(r.scatter.length/40))===0).slice(0,40),l=plotLayout();
