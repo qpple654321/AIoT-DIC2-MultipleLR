@@ -190,8 +190,8 @@
     const mse=se/n,r2=ss===0?(se===0?1:0):1-se/ss,p=model.features.length;
     return {MAE:ae/n,MSE:mse,RMSE:Math.sqrt(mse),R2:r2,Adjusted_R2:n>p+1?1-(1-r2)*(n-1)/(n-p-1):null,real,pred,n};
   }
-  function rfe(dataset,train,desired,transform){
-    let chosen=[...dataset.featureNames];
+  function rfe(dataset,train,desired,transform,featureNames=dataset.featureNames){
+    let chosen=[...featureNames];
     while(chosen.length>desired){
       const model=fitLinear(dataset,train,chosen,0,transform);
       const ranking=chosen.map((f,i)=>({f,importance:Math.abs(model.coefficients[i])})).sort((a,b)=>a.importance-b.importance);
@@ -310,7 +310,7 @@
     // Historical 23/22-feature baseline is retained without using the held-out test set for selection.
     if(dataset.problem==='price'||dataset.problem==='playtime'){
       const oldCols=dataset.baselineFeatures||dataset.featureNames;
-      const baselineCols=dataset.problem==='price'?rfe(dataset,parts.train,Math.min(18,oldCols.length),transform):oldCols;
+      const baselineCols=dataset.problem==='price'?rfe(dataset,parts.train,Math.min(18,oldCols.length),transform,oldCols):oldCols;
       const oldModel=fitLinear(dataset,parts.train,baselineCols,0,transform);
       const oldValidation=evaluate(dataset,parts.validation,oldModel);
       const oldName=dataset.problem==='price'?'Baseline_OLS_RFE18':'Baseline_OLS_All';
