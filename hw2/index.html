@@ -7,9 +7,9 @@
   <meta name="description" content="NCHU 資料探勘 HW2｜Steam 遊戲價格與遊玩時間多元線性回歸，RFE 特徵選擇、評估、95% 預測區間及自訂 CSV">
   <title>Steam Insights | Multiple Linear Regression · NCHU HW2</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="steam-theme.css?v=20261028-2">
-  <script src="core.js?v=20261028-2" defer></script>
-  <script src="app.js?v=20261028-2" defer></script>
+  <link rel="stylesheet" href="steam-theme.css?v=20261103-1">
+  <script src="core.js?v=20261103-1" defer></script>
+  <script src="app.js?v=20261103-1" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -109,11 +109,12 @@
         <div id="result-alert" class="alert" hidden></div>
         <div class="chart-grid">
           <article class="panel chart-panel"><div class="chart-heading"><div><span class="chart-kicker">EVALUATION / 01</span><h3>實際值 vs. 預測值</h3></div><span class="chart-note">Test set</span></div><div id="scatter-chart" class="chart" role="img" aria-label="實際值與預測值散佈圖"></div><p class="chart-caption">越靠近虛線，代表預測越準確；顯示固定隨機種子抽樣。</p></article>
-          <article class="panel chart-panel"><div class="chart-heading"><div><span class="chart-kicker">FEATURE SELECTION / 02</span><h3>特徵數量與模型表現</h3></div><span class="chart-note">Validation R²</span></div><div id="selection-chart" class="chart" role="img" aria-label="不同特徵數量之驗證 R 平方圖"></div><p class="chart-caption">使用訓練資料執行 RFE，以驗證集 RMSE 選擇模型。</p></article>
+          <article class="panel chart-panel"><div class="chart-heading"><div><span class="chart-kicker">FEATURE SELECTION / 02</span><h3>驗證集 RMSE 與模型比較</h3></div><span class="chart-note">Validation RMSE</span></div><div id="selection-chart" class="chart" role="img" aria-label="不同特徵數量之驗證 R 平方圖"></div><p class="chart-caption">RMSE 越低越好。舊版 OLS 作為對照；Huber／Two-Stage 為驗證集延伸實驗，不參與正式 OLS 選模。</p></article>
           <article class="panel chart-panel"><div class="chart-heading"><div><span class="chart-kicker">UNCERTAINTY / 03</span><h3>95% 預測區間</h3></div><span class="chart-note">Split conformal</span></div><div id="interval-chart" class="chart" role="img" aria-label="95% 預測區間圖"></div><p class="chart-caption">使用獨立校準集估計區間半寬；實測覆蓋率不必恰為 95%。</p></article>
           <article class="panel chart-panel"><div class="chart-heading"><div><span class="chart-kicker">DIAGNOSTICS / 04</span><h3>殘差分布</h3></div><span class="chart-note">Residuals</span></div><div id="residual-chart" class="chart" role="img" aria-label="預測值和殘差散佈圖"></div><p class="chart-caption">觀察預測偏差、非線性與異質變異，不宣稱通過所有模型假設。</p></article>
         </div>
         <div class="panel table-panel"><div class="chart-heading"><div><span class="chart-kicker">EXPERIMENTS</span><h3>回歸模型與特徵選擇比較</h3></div><button class="button button-outline button-small" id="export-btn">下載分析結果 JSON ↓</button></div><div class="table-wrap"><table><thead><tr><th>模型</th><th>特徵數</th><th>MAE</th><th>MSE</th><th>RMSE</th><th>R²</th><th>Adj. R²</th></tr></thead><tbody id="compare-body"></tbody></table></div><p class="chart-caption" id="model-explain"></p></div>
+        <div class="panel table-panel research-diagnostics"><div class="chart-heading"><div><span class="chart-kicker">DATA QUALITY / ERROR ANALYSIS</span><h3>資料品質與模型改善診斷</h3></div><span class="chart-note">Train distribution / Test error bands</span></div><div id="diagnostics-content" aria-live="polite"></div><p class="chart-caption">模型改善優先比較 Validation；測試集僅用於最終評估。Huber 與 Two-Stage 是延伸實驗，並非目前正式 OLS 部署模型。</p></div>
         <div class="panel feature-panel"><div class="chart-heading"><div><span class="chart-kicker">INTERPRETABILITY</span><h3>主要特徵與係數</h3></div><span class="chart-note">標準化係數的絕對值</span></div><div id="feature-bars"></div><p class="chart-caption">顯示模型中的關聯程度，不等於因果效應。衍生特徵與原始欄位數請分開解讀。</p></div>
       </div>
     </section>
