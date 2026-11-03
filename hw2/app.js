@@ -30,7 +30,7 @@ async function usePreset(name){
 }
 
 const comma=n=>Number(n).toLocaleString('en-US');
-const fmt=(n,d=3)=>!Number.isFinite(Number(n))?'—':Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const fmt=(n,d=3)=>n===null||n===undefined||n===''||!Number.isFinite(Number(n))?'—':Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
 const short=n=>!Number.isFinite(n)?'—':Math.abs(n)>=1000000?`${(n/1000000).toFixed(1)}m`:Math.abs(n)>=10000?`${(n/1000).toFixed(1)}k`:Math.abs(n)>=100?Math.round(n).toLocaleString():Math.abs(n)>=1?n.toFixed(2):n.toFixed(3);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function status(msg,mode='idle'){ $('status-text').textContent=msg; $('status-dot').parentNode.className='status '+mode;}
