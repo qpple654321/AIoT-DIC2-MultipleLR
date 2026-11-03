@@ -30,7 +30,7 @@ async function usePreset(name){
 }
 
 const comma=n=>Number(n).toLocaleString('en-US');
-const fmt=(n,d=3)=>!Number.isFinite(Number(n))?'—':Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const fmt=(n,d=3)=>n===null||n===undefined||n===''||!Number.isFinite(Number(n))?'—':Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
 const short=n=>!Number.isFinite(n)?'—':Math.abs(n)>=1000000?`${(n/1000000).toFixed(1)}m`:Math.abs(n)>=10000?`${(n/1000).toFixed(1)}k`:Math.abs(n)>=100?Math.round(n).toLocaleString():Math.abs(n)>=1?n.toFixed(2):n.toFixed(3);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function status(msg,mode='idle'){ $('status-text').textContent=msg; $('status-dot').parentNode.className='status '+mode;}
@@ -84,10 +84,10 @@ function render(r){
  $('empty-results').hidden=true;$('results-content').hidden=false;$('predict-empty').hidden=true;$('predict-content').hidden=false;
  $('metric-r2').textContent=fmt(r.metrics.R2,4);$('metric-rmse').textContent=fmt(r.metrics.RMSE,3);$('metric-coverage').textContent=fmt(r.coverage*100,1)+'%';$('rmse-unit').textContent=`均方根誤差 · ${r.unit}`;
  $('result-alert').hidden=!r.warning;if(r.warning)$('result-alert').textContent=r.warning;
- const rows=[...r.comparisons].sort((a,b)=>b.R2-a.R2);
- $('compare-body').innerHTML=rows.map(c=>`<tr class="${c.name===r.bestName?'best':''}"><td>${esc(c.name)}${c.name===r.bestName?' ★':''}</td><td>${c.features}</td><td>${fmt(c.MAE,3)}</td><td>${fmt(c.MSE,4)}</td><td>${fmt(c.RMSE,3)}</td><td>${fmt(c.R2,4)}</td><td>${fmt(c.Adjusted_R2,4)}</td></tr>`).join('');
+ const rows=[...r.comparisons].sort((a,b)=>a.RMSE-b.RMSE);
+ $('compare-body').innerHTML=rows.map(c=>`<tr class="${c.name===r.bestName?'best':''}"><td>${esc(c.name)}${c.name===r.bestName?' ★':''}${c.role?'<br><small>'+esc(c.role)+'</small>':''}</td><td>${c.features}</td><td>${fmt(c.MAE,3)}</td><td>${fmt(c.MSE,4)}</td><td>${fmt(c.RMSE,3)}</td><td>${fmt(c.R2,4)}</td><td>${fmt(c.Adjusted_R2,4)}</td></tr>`).join('');
  $('model-explain').textContent=`從 ${comma(r.originalRows)} 筆原始資料中取得 ${comma(r.validRows)} 筆有效資料，隨機抽取 ${comma(r.sampleCount)} 筆（seed=42）。訓練 ${comma(r.counts.train)}、驗證 ${comma(r.counts.validation)}、校準 ${comma(r.counts.calibration)}、測試 ${comma(r.counts.test)}。最佳模型 ${r.bestName}，測試集 MAE=${fmt(r.metrics.MAE,4)}、MSE=${fmt(r.metrics.MSE,5)}、RMSE=${fmt(r.metrics.RMSE,4)}、R²=${fmt(r.metrics.R2,4)}。區間半寬 ±${fmt(r.q,3)} ${r.unit}。`;
- renderScatter(r);renderSelection(r);renderIntervals(r);renderResiduals(r);renderFeatures(r);renderPredictFields(r);
+ renderScatter(r);renderSelection(r);renderIntervals(r);renderResiduals(r);renderFeatures(r);renderDiagnostics(r);renderPredictFields(r);
 }
 function svgBase(inner,w=540,h=266){return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="0" y="0" width="${w}" height="${h}" fill="#fff"/>${inner}</svg>`;}
 function plotLayout(w=540,h=266){return {w,h,left:49,right:17,top:14,bottom:37,pw:w-66,ph:h-51};}
@@ -102,11 +102,47 @@ function renderScatter(r){const points=r.scatter,l=plotLayout(),max=Math.max(.01
  const x=v=>l.left+l.pw*Math.max(0,Math.min(1,v/max)),y=v=>l.top+l.ph*(1-Math.max(0,Math.min(1,v/max)));
  let s=axes(l,max,0,max,'實際值','預測值');s+=`<line x1="${x(0)}" y1="${y(0)}" x2="${x(max)}" y2="${y(max)}" stroke="#0e9a88" stroke-width="1.8" stroke-dasharray="6 5"/>`;
  for(const p of points){s+=`<circle cx="${x(p.actual)}" cy="${y(p.predicted)}" r="2.7" fill="#347b96" opacity=".34"/>`;} $('scatter-chart').innerHTML=svgBase(s);}
-function renderSelection(r){const vals=r.comparisons,l=plotLayout(),left=45,right=15,barW=(l.w-left-right)/vals.length;
- let s='';for(let i=0;i<=4;i++){const y=l.top+l.ph*(1-i/4);s+=`<line x1="${left}" y1="${y}" x2="${l.w-right}" y2="${y}" stroke="#e6edf3" stroke-dasharray="3 4"/><text x="${left-9}" y="${y+4}" fill="#93a1b1" font-size="10" text-anchor="end">${(i/4).toFixed(2)}</text>`;}
- vals.forEach((v,i)=>{const x=left+i*barW+barW*.17,bw=barW*.64,ratio=Math.max(0,Math.min(1,v.R2)),h=l.ph*ratio;
- s+=`<rect x="${x}" y="${l.top+l.ph-h}" width="${bw}" height="${h}" rx="5" fill="${v.name===r.bestName?'#0f9688':'#8caebc'}"/><text x="${x+bw/2}" y="${l.top+l.ph-h-8}" text-anchor="middle" font-size="11" font-weight="650" fill="#557185">${fmt(v.R2,2)}</text><text x="${x+bw/2}" y="${l.top+l.ph+18}" text-anchor="middle" font-size="10" fill="#8194a5">${esc(v.name.includes('Ridge')?'Ridge':v.features+' f.')}</text>`;
- });$('selection-chart').innerHTML=svgBase(s);}
+function renderSelection(r){
+ const vals=r.comparisons,l=plotLayout(),left=47,right=13,barW=(l.w-left-right)/vals.length;
+ const max=Math.max(1,...vals.map(v=>v.RMSE))*1.12;
+ let out='';
+ for(let i=0;i<=4;i++){
+   const y=l.top+l.ph*(1-i/4),tick=max*i/4;
+   out+='<line x1="'+left+'" y1="'+y+'" x2="'+(l.w-right)+'" y2="'+y+'" stroke="#e6edf3" stroke-dasharray="3 4"/>';
+   out+='<text x="'+(left-8)+'" y="'+(y+4)+'" text-anchor="end" font-size="10" fill="#93a1b1">'+esc(short(tick))+'</text>';
+ }
+ vals.forEach((v,i)=>{
+   const x=left+i*barW+barW*.17,bw=barW*.66,ratio=Math.max(0,v.RMSE/max),h=l.ph*ratio;
+   const color=v.name===r.bestName?'#0f9688':v.name.includes('Explore')?'#ed9a5c':'#8caebc';
+   let label=v.name.includes('Baseline')?'舊版':v.name.includes('Huber')?'Huber':v.name.includes('TwoStage')?'2-Stage':v.name.includes('Ridge')?'Ridge':v.name.includes('_All')?'OLS all':v.features+'f';
+   out+='<rect x="'+x+'" y="'+(l.top+l.ph-h)+'" width="'+bw+'" height="'+h+'" rx="4" fill="'+color+'"/>';
+   out+='<text x="'+(x+bw/2)+'" y="'+Math.max(l.top+9,l.top+l.ph-h-7)+'" text-anchor="middle" font-size="10" font-weight="650" fill="#8194a5">'+esc(short(v.RMSE))+'</text>';
+   out+='<text x="'+(x+bw/2)+'" y="'+(l.top+l.ph+18)+'" text-anchor="middle" font-size="9.5" fill="#8194a5">'+esc(label)+'</text>';
+ });
+ $('selection-chart').innerHTML=svgBase(out);
+}
+function renderDiagnostics(r){
+ const tr=r.dataDiagnostics,di=r.errorDiagnostics,host=$('diagnostics-content');
+ if(!host||!tr||!di)return;
+ const pct=n=>fmt(n*100,1)+'%';
+ const score=r.comparisons.find(c=>c.name===r.bestName);
+ const base=r.comparisons.find(c=>c.name.startsWith('Baseline_'));
+ const extra=r.comparisons.find(c=>c.name.includes('_Explore'));
+ let summary='<p><b>訓練集（不含 Test）</b>：樣本 '+comma(tr.n)+' 筆；目標為 0 的比例 '+pct(tr.zeroRate)+'（'+comma(tr.zeros)+' 筆）；中位數 '+fmt(tr.median,2)+'；P95 '+fmt(tr.p95,2)+'；P99 '+fmt(tr.p99,2)+'；最大值 '+fmt(tr.max,2)+' '+esc(r.unit)+'。</p>';
+ if(base&&score){
+   const change=(score.RMSE-base.RMSE)/Math.max(1e-12,base.RMSE)*100;
+   summary+='<p><b>新舊特徵對照（Validation）</b>：原版 RMSE='+fmt(base.RMSE,4)+'；目前最佳 OLS RMSE='+fmt(score.RMSE,4)+'，變動 '+(change>0?'+':'')+fmt(change,2)+'%。模型選擇只使用 Validation。</p>';
+ }
+ if(extra){
+   summary+='<p><b>延伸實驗（Validation only）</b>：'+esc(extra.name)+' 的 MAE='+fmt(extra.MAE,4)+'、RMSE='+fmt(extra.RMSE,4)+'、R²='+fmt(extra.R2,4)+'。'+
+   (r.problem==='price'?'Huber 抗極端值，但未保證 RMSE 改善。':'Two-Stage 結合零值分類與正值 Log1p 回歸，不取代作業的 OLS 主模型。')+'</p>';
+ }
+ const w=di.worst;
+ summary+='<p><b>測試集最大絕對誤差</b>：'+esc(w.name)+'，真實值 '+fmt(w.actual,2)+'，預測值 '+fmt(w.predicted,2)+'，絕對誤差 '+fmt(w.error,2)+' '+esc(r.unit)+'。此分析僅供最終診斷，沒有拿 Test 來調參。</p>';
+ const bandRows=di.bands.map(g=>'<tr><td>'+esc(g.label)+'</td><td>'+comma(g.n)+'</td><td>'+fmt(g.MAE,2)+'</td><td>'+fmt(g.RMSE,2)+'</td></tr>').join('');
+ host.innerHTML=summary+(di.bands.length?'<div class="table-wrap"><table><thead><tr><th>真實值區間（Test）</th><th>筆數</th><th>MAE</th><th>RMSE</th></tr></thead><tbody>'+bandRows+'</tbody></table></div>':'<p>自訂 CSV 的目標單位由使用者決定，因此不套用 Steam 專用的價格／分鐘級距。</p>')+
+ '<p class="chart-caption">Test 的區間誤差是完成模型選擇後的診斷；0 筆的區間不計分。不同群組樣本數不同，不應只比較誤差大小就推論因果。</p>';
+}
 function renderIntervals(r){const pts=[...r.scatter].sort((a,b)=>a.actual-b.actual).filter((_,i)=>i%Math.max(1,Math.floor(r.scatter.length/40))===0).slice(0,40),l=plotLayout();
  const max=Math.max(1,percentile(pts.flatMap(d=>[d.hi,d.actual]),.99)*1.05),x=i=>l.left+l.pw*i/Math.max(1,pts.length-1),y=v=>l.top+l.ph*(1-Math.max(0,Math.min(1,v/max)));
  let s='';for(let i=0;i<=4;i++){const py=l.top+l.ph*(1-i/4);s+=`<line x1="${l.left}" y1="${py}" x2="${l.left+l.pw}" y2="${py}" stroke="#edf1f5" stroke-dasharray="3 4"/><text x="${l.left-8}" y="${py+3}" fill="#90a2af" text-anchor="end" font-size="10">${niceTick(max*i/4)}</text>`;}
