@@ -60,6 +60,21 @@
     } else {
       vec.price=cleanNum(row.price);
     }
+    // Extra engineered variables: deterministic, target-free row transformations.
+    // Preserve the original 23/22 dimensions first, so the historical OLS baseline is reproducible.
+    const positive=Math.max(0,cleanNum(row.positive_ratings)),negative=Math.max(0,cleanNum(row.negative_ratings));
+    vec.positive_ratio_smoothed=(positive+1)/(positive+negative+2);
+    vec.log_total_ratings=Math.log1p(positive+negative);
+    vec.genre_adventure=has(g,'Adventure');
+    vec.genre_casual=has(g,'Casual');
+    vec.genre_racing=has(g,'Racing');
+    vec.genre_sports=has(g,'Sports');
+    vec.category_singleplayer=Number(/single-player/i.test(c));
+    vec.category_coop=Number(/co-op/i.test(c));
+    if(problem==='playtime'){
+      vec.is_free=Number(cleanNum(row.price)===0);
+      vec.log_price=Math.log1p(Math.max(0,cleanNum(row.price)));
+    }
     return vec;
   }
   function makeSteamDataset(parsed, problem){
@@ -73,7 +88,7 @@
       entries.push({x:steamVector(r,problem), y, name:r.name||String(r.appid||'')});
     }
     if(entries.length<80) throw Error('有效的 Steam 資料不足 80 筆');
-    return {label:problem==='price'?'Steam 遊戲價格預測':'Steam 平均遊玩時間預測',target,unit:problem==='price'?'英鎊 (£)':'分鐘',rawFeatureCount,featureNames:Object.keys(entries[0].x),entries,originalRows:parsed.rows.length,source:STEAM_URL,kaggle:'https://www.kaggle.com/datasets/nikdavis/steam-store-games',problem};
+    return {label:problem==='price'?'Steam 遊戲價格預測':'Steam 平均遊玩時間預測',target,unit:problem==='price'?'英鎊 (£)':'分鐘',rawFeatureCount,featureNames:Object.keys(entries[0].x),baselineFeatures:Object.keys(entries[0].x).slice(0,problem==='price'?23:22),entries,originalRows:parsed.rows.length,source:STEAM_URL,kaggle:'https://www.kaggle.com/datasets/nikdavis/steam-store-games',problem};
   }
   function inferColumns(parsed){
     const all=parsed.columns; const rows=parsed.rows.slice(0,Math.min(500,parsed.rows.length));
@@ -158,6 +173,11 @@
     return {features:selected,means,scales,coefficients,intercept:ym,alpha,targetTransform,nonnegative:dataset.problem!=='custom'};
   }
   function predictModel(model,x){
+    if(model.algorithm==='TwoStageExplore'){
+      let z=model.intercept;
+      for(let j=0;j<model.features.length;j++)z+=model.coefficients[j]*(x[model.features[j]]-model.means[j])/model.scales[j];
+      return sigmoid(z)*predictModel(model.positiveModel,x);
+    }
     let z=model.intercept;model.features.forEach((f,j)=>z+=model.coefficients[j]*(x[f]-model.means[j])/model.scales[j]);
     const y=model.targetTransform==='log1p'?Math.expm1(Math.min(20,z)):z;
     return Number.isFinite(y)?(model.nonnegative?Math.max(0,y):y):NaN;
@@ -183,6 +203,101 @@
     const errors=indices.map(i=>Math.abs(dataset.entries[i].y-predictModel(model,dataset.entries[i].x))).sort((a,b)=>a-b);
     const rank=Math.ceil((errors.length+1)*level),q=errors[Math.min(errors.length-1,Math.max(0,rank-1))];return q;
   }
+
+  // Huber IRLS comparison. All fitting, MAD estimation and weights use TRAIN only.
+  // The model is an experiment; official homework predictions still use selected OLS.
+  function fitWeightedLinear(dataset,idx,selected,weights){
+    const n=idx.length,d=selected.length,means=[],scales=[];
+    let sumW=0,weightedY=0;
+    for(let i=0;i<n;i++){sumW+=weights[i];weightedY+=weights[i]*dataset.entries[idx[i]].y;}
+    if(sumW<=0)throw Error('Huber：權重總和為 0');
+    const ym=weightedY/sumW;
+    for(const f of selected){
+      let m=0;for(let i=0;i<n;i++)m+=weights[i]*dataset.entries[idx[i]].x[f];m/=sumW;means.push(m);
+      let ss=0;for(let i=0;i<n;i++){const z=dataset.entries[idx[i]].x[f]-m;ss+=weights[i]*z*z;}
+      scales.push(Math.sqrt(ss/sumW)||1);
+    }
+    const A=Array.from({length:d},()=>Array(d).fill(0)),b=Array(d).fill(0);
+    for(let t=0;t<n;t++){
+      const w=weights[t],e=dataset.entries[idx[t]],dy=e.y-ym;
+      const x=selected.map((f,j)=>(e.x[f]-means[j])/scales[j]);
+      for(let j=0;j<d;j++){b[j]+=w*x[j]*dy;for(let k=0;k<=j;k++)A[j][k]+=w*x[j]*x[k];}
+    }
+    for(let j=0;j<d;j++){for(let k=0;k<j;k++)A[k][j]=A[j][k];A[j][j]+=1e-6;}
+    return {features:selected,means,scales,coefficients:solve(A,b),intercept:ym,alpha:0,targetTransform:'identity',nonnegative:dataset.problem!=='custom',algorithm:'HuberIRLS'};
+  }
+  function predictUnclipped(model,x){
+    let v=model.intercept;
+    for(let j=0;j<model.features.length;j++)v+=model.coefficients[j]*(x[model.features[j]]-model.means[j])/model.scales[j];
+    return v;
+  }
+  function medianSorted(sorted){return sorted[Math.floor(sorted.length/2)]||0;}
+  function fitHuber(dataset,idx,selected,iterations=7){
+    if(idx.length<=selected.length+1)throw Error('Huber：樣本不足');
+    let m=fitLinear(dataset,idx,selected,0,'identity'),delta=0;
+    for(let pass=0;pass<iterations;pass++){
+      const residual=idx.map(i=>dataset.entries[i].y-predictUnclipped(m,dataset.entries[i].x));
+      const mid=medianSorted([...residual].sort((a,b)=>a-b));
+      const mad=medianSorted(residual.map(v=>Math.abs(v-mid)).sort((a,b)=>a-b));
+      delta=Math.max(0.01,1.345*1.4826*mad);
+      const weights=residual.map(v=>Math.min(1,delta/Math.max(1e-9,Math.abs(v))));
+      m=fitWeightedLinear(dataset,idx,selected,weights);
+    }
+    m.robustDelta=delta;
+    return m;
+  }
+  // A two-stage positive-playtime experiment, kept separate from the official OLS model.
+  // Logistic classifier + log1p OLS among positive training observations.
+  function sigmoid(z){return z>=0?1/(1+Math.exp(-Math.min(40,z))):Math.exp(Math.max(-40,z))/(1+Math.exp(Math.max(-40,z)));}
+  function fitTwoStage(dataset,idx,selected){
+    const positiveIdx=idx.filter(i=>dataset.entries[i].y>0);
+    if(positiveIdx.length<selected.length+2)throw Error('TwoStage：正值樣本不足');
+    const positive=positiveIdx.length/idx.length;
+    if(positive<=0||positive>=1)throw Error('TwoStage：需要零值及正值樣本');
+    const d=selected.length,means=[],scales=[];
+    for(const f of selected){
+      let sum=0;for(const i of idx)sum+=dataset.entries[i].x[f];const mean=sum/idx.length;means.push(mean);
+      let ss=0;for(const i of idx)ss+=(dataset.entries[i].x[f]-mean)**2;
+      scales.push(Math.sqrt(ss/idx.length)||1);
+    }
+    const weights=Array(d).fill(0);let intercept=Math.log(positive/(1-positive));
+    for(let epoch=0;epoch<100;epoch++){
+      let gi=0;const grad=Array(d).fill(0);
+      for(const i of idx){
+        const e=dataset.entries[i],truth=Number(e.y>0);
+        let z=intercept;
+        for(let j=0;j<d;j++)z+=weights[j]*(e.x[selected[j]]-means[j])/scales[j];
+        const error=sigmoid(z)-truth;gi+=error;
+        for(let j=0;j<d;j++)grad[j]+=error*(e.x[selected[j]]-means[j])/scales[j];
+      }
+      const rate=0.15/idx.length;
+      intercept-=rate*gi;
+      for(let j=0;j<d;j++)weights[j]-=rate*(grad[j]+0.01*idx.length*weights[j]);
+    }
+    return {algorithm:'TwoStageExplore',features:selected,means,scales,coefficients:weights,intercept,nonnegative:true,
+      positiveModel:fitLinear(dataset,positiveIdx,selected,0,'log1p'),positiveRate:positive};
+  }
+  function trainDiagnostics(dataset,idx){
+    const sorted=idx.map(i=>dataset.entries[i].y).sort((a,b)=>a-b);
+    const q=p=>sorted[Math.min(sorted.length-1,Math.floor(p*(sorted.length-1)))]||0;
+    const zeroCount=sorted.filter(v=>v===0).length;
+    return {n:sorted.length,zeros:zeroCount,zeroRate:zeroCount/sorted.length,
+      median:q(.5),p95:q(.95),p99:q(.99),max:q(1),min:q(0)};
+  }
+  function testDiagnostics(dataset,indices,evalResult){
+    const bins=dataset.problem==='price'?
+      [{label:'免費 (£0)',lo:0,hi:0},{label:'£0–2',lo:0,hi:2},{label:'£2–5',lo:2,hi:5},{label:'£5–10',lo:5,hi:10},{label:'£10–20',lo:10,hi:20},{label:'£20–50',lo:20,hi:50},{label:'£50 以上',lo:50,hi:Infinity}]:
+      [{label:'0 分鐘',lo:0,hi:0},{label:'1–30 分鐘',lo:0,hi:30},{label:'30–120 分鐘',lo:30,hi:120},{label:'120–600 分鐘',lo:120,hi:600},{label:'600–3600 分鐘',lo:600,hi:3600},{label:'3600 分鐘以上',lo:3600,hi:Infinity}];
+    const groups=bins.map(b=>({...b,n:0,ae:0,se:0}));
+    let worst={error:-1};
+    for(let j=0;j<evalResult.n;j++){
+      const actual=evalResult.real[j],predicted=evalResult.pred[j],ae=Math.abs(actual-predicted);
+      const band=groups.find(b=>b.hi===0?actual===0:(actual>b.lo&&actual<=b.hi));
+      if(band){band.n++;band.ae+=ae;band.se+=ae*ae;}
+      if(ae>worst.error)worst={name:dataset.entries[indices[j]].name,actual,predicted,error:ae};
+    }
+    return {bands:groups.map(b=>({label:b.label,n:b.n,MAE:b.n?b.ae/b.n:null,RMSE:b.n?Math.sqrt(b.se/b.n):null})),worst};
+  }
   function train(dataset,onProgress=()=>{}){
     const parts=splitData(dataset.entries);if(parts.train.length<15)throw Error('有效資料不足以分配訓練/驗證/校準/測試集');
     const fill=fitImputer(dataset,parts.train);applyImputer(dataset,fill);
@@ -192,6 +307,17 @@
     const targets=[14,18,d].filter((x,i,a)=>x<=d&&a.indexOf(x)===i).sort((a,b)=>a-b);
     if(!targets.includes(d))targets.push(d);
     const comparisons=[],models=[];
+    // Historical 23/22-feature baseline is retained without using the held-out test set for selection.
+    if(dataset.problem==='price'||dataset.problem==='playtime'){
+      const oldCols=dataset.baselineFeatures||dataset.featureNames;
+      const baselineCols=dataset.problem==='price'?rfe(dataset,parts.train,Math.min(18,oldCols.length),transform):oldCols;
+      const oldModel=fitLinear(dataset,parts.train,baselineCols,0,transform);
+      const oldValidation=evaluate(dataset,parts.validation,oldModel);
+      const oldName=dataset.problem==='price'?'Baseline_OLS_RFE18':'Baseline_OLS_All';
+      const baselineEntry={name:oldName,features:baselineCols.length,MAE:oldValidation.MAE,MSE:oldValidation.MSE,RMSE:oldValidation.RMSE,R2:oldValidation.R2,Adjusted_R2:oldValidation.Adjusted_R2,role:'historical baseline'};
+      comparisons.push(baselineEntry);
+      models.push({name:oldName,model:oldModel,val:oldValidation});
+    }
     for(const [j,k] of targets.entries()){
       onProgress(`RFE 特徵選擇：${k}/${d}`);
       const cols=k===d?[...dataset.featureNames]:rfe(dataset,parts.train,k,transform);
@@ -201,9 +327,25 @@
     }
     onProgress('Ridge 作為基準模型比較');
     const ridge=fitLinear(dataset,parts.train,dataset.featureNames,0.02,transform),rv=evaluate(dataset,parts.validation,ridge);
-    comparisons.push({name:'Ridge_Comparison',features:d,MAE:rv.MAE,MSE:rv.MSE,RMSE:rv.RMSE,R2:rv.R2,Adjusted_R2:rv.Adjusted_R2});
+    comparisons.push({name:'Ridge_Comparison',features:d,MAE:rv.MAE,MSE:rv.MSE,RMSE:rv.RMSE,R2:rv.R2,Adjusted_R2:rv.Adjusted_R2,role:'comparison only'});
+    if(dataset.problem==='price'){
+      onProgress('延伸模型：Huber 穩健回歸（僅使用 Train）');
+      const cols=rfe(dataset,parts.train,Math.min(18,d),transform);
+      const huber=fitHuber(dataset,parts.train,cols);
+      const hv=evaluate(dataset,parts.validation,huber);
+      comparisons.push({name:'Huber_RFE18_Explore',features:cols.length,MAE:hv.MAE,MSE:hv.MSE,RMSE:hv.RMSE,R2:hv.R2,Adjusted_R2:hv.Adjusted_R2,role:'experiment: validation only'});
+    }else if(dataset.problem==='playtime'){
+      onProgress('延伸模型：Two-Stage 零值與正值回歸');
+      try{
+        const cols=rfe(dataset,parts.train,Math.min(18,d),transform);
+        const twoStage=fitTwoStage(dataset,parts.train,cols);
+        const tv=evaluate(dataset,parts.validation,twoStage);
+        comparisons.push({name:'TwoStage_RFE18_Explore',features:cols.length,MAE:tv.MAE,MSE:tv.MSE,RMSE:tv.RMSE,R2:tv.R2,Adjusted_R2:tv.Adjusted_R2,role:'experiment: validation only'});
+      }catch(e){onProgress('Two-Stage 樣本不足，略過延伸模型');}
+    }
     models.sort((a,b)=>a.val.RMSE-b.val.RMSE);
     const best=models[0],test=evaluate(dataset,parts.test,best.model), q=conformal(best.model,dataset,parts.calibration);
+    const dataDiagnostics=trainDiagnostics(dataset,parts.train),errorDiagnostics=testDiagnostics(dataset,parts.test,test);
     const coverage=test.pred.filter((x,i)=>Math.abs(test.real[i]-x)<=q).length/test.n;
     const coeff=best.model.features.map((f,i)=>({feature:f,coefficient:best.model.coefficients[i],importance:Math.abs(best.model.coefficients[i])})).sort((a,b)=>b.importance-a.importance);
     const subset=shuffledIndex(test.n,13).slice(0,Math.min(420,test.n)).map(i=>({actual:test.real[i],predicted:test.pred[i],lo:dataset.problem==='custom'?test.pred[i]-q:Math.max(0,test.pred[i]-q),hi:test.pred[i]+q,residual:test.real[i]-test.pred[i]}));
@@ -212,13 +354,13 @@
       kaggle:dataset.kaggle,originalRows:dataset.originalRows,validRows:dataset.entries.length,
       rawFeatureCount:dataset.rawFeatureCount,encodedFeatureCount:d,
       sampleCount:parts.sampled,counts:{train:parts.train.length,validation:parts.validation.length,calibration:parts.calibration.length,test:parts.test.length},
-      bestName:best.name,model:best.model,fill,comparisons,metrics:{MAE:test.MAE,MSE:test.MSE,RMSE:test.RMSE,R2:test.R2,Adjusted_R2:test.Adjusted_R2},
-      q,coverage,coefficients:coeff,scatter:subset,selectionMethod:'RFE on training only; choose by validation RMSE; test untouched',
+      bestName:best.name,model:best.model,fill,comparisons,dataDiagnostics,errorDiagnostics,metrics:{MAE:test.MAE,MSE:test.MSE,RMSE:test.RMSE,R2:test.R2,Adjusted_R2:test.Adjusted_R2},
+      q,coverage,coefficients:coeff,scatter:subset,selectionMethod:'RFE on training only; choose OLS by validation RMSE; Huber/TwoStage are exploratory comparisons only; test untouched',
       transform,seed:42,
       warning:dataset.rawFeatureCount<14?'此資料集原始特徵少於 14，僅可作為加分功能展示，不符合主要 Kaggle 題目要求。':(parts.test.length<30?'測試集筆數較少，指標與預測區間覆蓋率的變動可能較大。':null),
       note:'線性模型是描述性關聯，並非因果推斷；Steam 2019 歷史資料不代表即時價格。'
     };
     return summary;
   }
-  return {parseCSV,makeSteamDataset,makeGenericDataset,inferColumns,train,predictModel,STEAM_URL,STARTUPS_URL,STEAM_COLUMNS,splitData,fitLinear,evaluate,conformal,solve,rfe};
+  return {parseCSV,makeSteamDataset,makeGenericDataset,inferColumns,train,predictModel,STEAM_URL,STARTUPS_URL,STEAM_COLUMNS,splitData,fitLinear,fitHuber,fitTwoStage,evaluate,conformal,solve,rfe,trainDiagnostics,testDiagnostics};
 });
