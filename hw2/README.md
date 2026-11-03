@@ -163,6 +163,46 @@ python -m http.server 8000
 5. **Evaluation**：獨立 Test 的 MAE、RMSE、R²、殘差與 95% PI，分析極端值造成的誤差。
 6. **Deployment**：GitHub Pages 可直接選兩種 Problem、貼上 CSV、即時訓練與手動輸入特徵預測。
 
+## 2026-11-03｜NotebookLM 研究建議的實作驗證（GPT 協助開發）
+
+> 本段「NotebookLM 研究建議」指使用者提供的 NotebookLM 分析意見；**實際程式修改、實驗設計與重算由 ChatGPT 協助進行**。以下是以真實 `steam.csv`、新版本 `core.js` 重算的結果，不是虛構的示意值。**老師要求的 NotebookLM 原始摘要及來源紀錄仍須獨立保留**。
+
+### 已實作的改善（不取代主作業多元線性回歸）
+
+1. **更多 Steam 衍生特徵**：保留原本 Price 15 個／Playtime 14 個原始輸入欄位，並新增平滑好評率、評論總數 `log1p`、Adventure/Casual/Racing/Sports 的 Genre 指示、Single-player/Co-op 的 Category 指示。Playtime 額外加入 Free/Paid 指示及 `log1p(price)`。模型維度 Price **23 → 31**、Playtime **22 → 32**；**原始輸入欄位數沒有增加**。
+2. **可比較的舊版 OLS 基準**：保留舊版 23／22 維特徵空間的 OLS，價格用舊版 RFE18，遊玩時間用舊版全部 22 維；新特徵是否有用可直接看 Validation。
+3. **價格 Huber Regression（IRLS）**：使用訓練集 MAD 估計 Huber 閾值、以迭代重新加權最小平方法訓練；列為 **Validation-only 延伸模型**，不參與主模型選擇。它可能降低 MAE，但不保證 RMSE 更低。
+4. **遊玩時間 Two-Stage（探索）**：以訓練集擬合 Logistic Regression 判斷 `Playtime > 0` 的機率；在訓練集正值樣本上用 OLS 預測 `log1p(Playtime)`；以機率乘上正值預測近似條件期望。這個簡化方式不是完整的零值膨脹分布模型，且未修正對數反轉的偏差，**僅用於探索／Validation 比較**。
+5. **診斷圖表與表格**：網站新增訓練集目標分位數、0 值占比、測試集最大誤差樣本、依真實值級距的 MAE／RMSE；模型比較圖改顯示 **Validation RMSE**（越低越好）。自訂 CSV 不假設目標單位是英鎊或分鐘。
+6. **固定測試保護**：RFE 與模型係數由 Training 計算；OLS 主模型由 Validation RMSE 選擇；Calibration 計算 95% prediction interval；Test 只在確定主模型後做最終評估和誤差診斷。Huber／Two-Stage 的初步結果**只報 Validation**，不能把它們宣稱為 Test 改善。
+
+### 真實資料重算結果（seed=42；12,000 筆）
+
+切分仍為 Train **7,200**、Validation **2,400**、Calibration **1,200**、Test **1,200**。所有 RMSE、MAE 均在原始目標單位下計算。
+
+| 價格模型 | 特徵空間 | Validation RMSE（£） | Validation MAE（£） | 角色 |
+|---|---|---:|---:|---|
+| 舊版 OLS RFE18 | 23 維原始衍生欄位中選 18 | **5.7466** | 4.0186 | 基準 |
+| **新版 OLS 全 31 維** | 加入好評率、更多 Genre/Category | **5.6375** | 3.9084 | **正式最佳 OLS** |
+| Huber RFE18 | 新特徵中選 18、IRLS | 5.7805 | **3.7718** | 延伸比較，僅 Validation |
+
+新版 OLS 價格測試集：**MAE £4.2983、RMSE £13.2556、R² 0.0510**；舊版相同測試集 RMSE £13.3182、R² 0.0420。95% prediction interval 半寬 **±£10.0462**，Test coverage **94.25%**。這是小幅改善，並非解決了長尾售價的根本問題；Test 的 £421.99 極端樣本仍僅預測約 £6.93。
+
+| 遊玩時間模型 | Validation RMSE（分鐘） | Validation MAE（分鐘） | Validation R² | 角色 |
+|---|---:|---:|---:|---|
+| **舊版 OLS 全 22 維** | **1,269.46** | 125.69 | -0.0251 | **仍是正式最佳 OLS** |
+| Two-Stage RFE18 | **1,235.88** | **113.30** | **0.0285** | 延伸比較，僅 Validation |
+
+Playtime 正式 OLS 的 Test 仍為 **MAE 129.97 分鐘、RMSE 800.11 分鐘、R² -0.3423**。**不能把 Two-Stage 的 Validation R² 0.0285 冒稱為 Test R² 或表示正式模型已改善**。
+
+### 資料品質與模型限制
+
+- Price Training：**661 / 7,200（9.18%）免費遊戲**；目標中位數 £3.99、P99 £32.99、Train 最大 £209.99；而 Test 存在一筆 £421.99 的高價遊戲，顯示泛化很受未見過的尾部樣本影響。
+- Playtime Training：**5,610 / 7,200（77.92%）為 0 分鐘**；中位數 0、P99 2,486、最大 95,245 分鐘。Test 的零值為 **920 / 1,200（76.67%）**。目標 0 值的實際含義與 SteamSpy 蒐集品質仍需查證。
+- **已測試但未改善**：2026-10-28 的 Price `log1p` 目標轉換，Validation RMSE £5.7466 → £6.1038。此結果不因新增 Huber／特徵工程而改寫。
+- **後續計畫，未實作**：Train-only RFECV／K-Fold CV（需避免 fold 內補值資訊洩漏）、Huber 閾值敏感度分析、兩階段模型的獨立測試與校準、更多重複 seed 的泛化穩健性檢查。
+- **歷史圖片的版本差異**：前一批 12 張 PNG、先前分項 PDF 與本 README 的「2026-10-28」章節，保留的是**修改前 OLS 實驗快照**；新版網站實際訓練出來的數字應以本節 2026-11-03 版本為準。報告若使用舊圖，請標明「改善前／Baseline」。
+
 ## 文件與誠信說明
 
 - **GPT 輔助內容**：系統設計、前端網站、回歸程式及 UI 由 ChatGPT 協助撰寫；實際數字以網站讀入資料後動態計算為準。
