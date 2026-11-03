@@ -285,7 +285,7 @@
       median:q(.5),p95:q(.95),p99:q(.99),max:q(1),min:q(0)};
   }
   function testDiagnostics(dataset,indices,evalResult){
-    const bins=dataset.problem==='price'?
+    const bins=dataset.problem==='custom'?[]:dataset.problem==='price'?
       [{label:'免費 (£0)',lo:0,hi:0},{label:'£0–2',lo:0,hi:2},{label:'£2–5',lo:2,hi:5},{label:'£5–10',lo:5,hi:10},{label:'£10–20',lo:10,hi:20},{label:'£20–50',lo:20,hi:50},{label:'£50 以上',lo:50,hi:Infinity}]:
       [{label:'0 分鐘',lo:0,hi:0},{label:'1–30 分鐘',lo:0,hi:30},{label:'30–120 分鐘',lo:30,hi:120},{label:'120–600 分鐘',lo:120,hi:600},{label:'600–3600 分鐘',lo:600,hi:3600},{label:'3600 分鐘以上',lo:3600,hi:Infinity}];
     const groups=bins.map(b=>({...b,n:0,ae:0,se:0}));
